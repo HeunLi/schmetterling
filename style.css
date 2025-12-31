@@ -59,7 +59,7 @@ body {
 .stanza {
     position: absolute;
     top: 0;
-    left: 25%;
+    left: 50%;
     transform: translate(-50%, 0);
     width: 100%;
     opacity: 0;
@@ -179,7 +179,7 @@ body {
 #music-wrapper {
     position: fixed;
     top: 45%; /* Moved to top */
-    left: 25%; /* Moved to left side */
+    left: 15%; /* Moved to left side */
     z-index: 50; /* Above stars, below welcome screen */
     display: none; /* Hidden until midnight */
     align-items: center;
