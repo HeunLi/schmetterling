@@ -50,7 +50,7 @@
         const starContainer = document.getElementById('stars');
         for(let i=0; i<150; i++) {
             const star = document.createElement('div');
-            star.className = 'star'; // changed to className for cleaner code
+            star.className = 'star';
             star.style.left = Math.random() * 100 + '%';
             star.style.top = Math.random() * 60 + '%'; 
             star.style.width = Math.random() * 3 + 'px';
@@ -61,59 +61,170 @@
 
         // --- 2. SETUP GRASS & LADYBUGS ---
         const grassContainer = document.getElementById('grass');
-        const numBlades = 100; // Increased count slightly
+        const numBlades = 100;
+        const blades = []; // Store blades for easy access later
 
-        // Define color palettes (dark bottom -> lighter top)
         const grassPalettes = [
-            ['#0f3d0f', '#2d6a2d'], // Standard green
-            ['#0a2b0a', '#1f4f1f'], // Darker green
-            ['#051a05', '#133313']  // Very dark shadow green
+            ['#0f3d0f', '#2d6a2d'], 
+            ['#0a2b0a', '#1f4f1f'], 
+            ['#051a05', '#133313']  
         ];
 
         for(let i=0; i<numBlades; i++) {
             const blade = document.createElement('div');
             blade.classList.add('blade');
             
-            // 1. Height variation (Much taller now: 100px to 250px)
             const h = 100 + Math.random() * 150; 
             blade.style.height = h + 'px';
-            
-            // 2. Position & Z-Index
             blade.style.left = Math.random() * 100 + '%';
-            // Taller blades in front, shorter ones behind
             blade.style.zIndex = Math.floor(h); 
 
-            // 3. Color Variation
-            // Pick a random palette index (0, 1, or 2)
             const paletteIndex = Math.floor(Math.random() * grassPalettes.length);
             const colors = grassPalettes[paletteIndex];
             blade.style.background = `linear-gradient(to top, ${colors[0]}, ${colors[1]})`;
 
-            // 4. Bending Variation (Injecting CSS Variables)
-            // Base angle: lean left or right between -20deg and +20deg
             const baseAngle = (Math.random() * 40 - 20).toFixed(1);
-            // Sway range: how much it moves, between 2deg and 8deg
             const swayRange = (Math.random() * 6 + 2).toFixed(1);
-            // Animation delay/duration for desynchronized movement
             const delay = (Math.random() * 2).toFixed(1);
-            const duration = (Math.random() * 2 + 2).toFixed(1); // 2s to 4s duration
+            const duration = (Math.random() * 2 + 2).toFixed(1);
 
             blade.style.setProperty('--rotate-base', `${baseAngle}deg`);
             blade.style.setProperty('--sway-range', `${swayRange}deg`);
             blade.style.animationDelay = `${delay}s`;
             blade.style.animationDuration = `${duration}s`;
 
-
-            // Add Ladybug (slightly lower chance now that grass is dense)
-            if(Math.random() > 0.88) {
+            // Initial Ladybug Population (Sparse, so we can fly more in)
+            if(Math.random() > 0.90) {
                 const bug = document.createElement('div');
                 bug.classList.add('ladybug');
                 blade.appendChild(bug);
             }
+            
             grassContainer.appendChild(blade);
+            blades.push(blade);
         }
 
-        // --- 3. SCROLL FADE LOGIC ---
+        // --- 3. LADYBUG AI (FLIGHT CONTROLLER) ---
+        function initNatureLife() {
+            setInterval(() => {
+                const action = Math.random();
+                
+                // 30% chance to fly OFF screen
+                if (action < 0.3) {
+                    flyOff();
+                } 
+                // 30% chance to fly ON screen
+                else if (action < 0.6) {
+                    flyOn();
+                }
+                // 20% chance to HOP blades
+                else if (action < 0.8) {
+                    hopBlade();
+                }
+            }, 1500); // Check for action every 1.5 seconds
+        }
+
+        function getGlobalPos(el) {
+            const rect = el.getBoundingClientRect();
+            return { x: rect.left, y: rect.top };
+        }
+
+        function createFlyingBug(startX, startY) {
+            const flier = document.createElement('div');
+            flier.classList.add('ladybug', 'flying');
+            flier.style.position = 'fixed';
+            flier.style.left = startX + 'px';
+            flier.style.top = startY + 'px';
+            document.body.appendChild(flier);
+            return flier;
+        }
+
+        function flyOff() {
+            // 1. Find a bug that is currently sitting
+            const sittingBugs = document.querySelectorAll('.blade .ladybug');
+            if (sittingBugs.length === 0) return;
+            
+            const bug = sittingBugs[Math.floor(Math.random() * sittingBugs.length)];
+            const pos = getGlobalPos(bug);
+
+            // 2. Remove sitting bug
+            bug.remove();
+
+            // 3. Create flying bug at same spot
+            const flier = createFlyingBug(pos.x, pos.y);
+
+            // 4. Animate off screen (random direction up)
+            setTimeout(() => {
+                flier.style.top = '-50px';
+                flier.style.left = (pos.x + (Math.random() * 200 - 100)) + 'px';
+            }, 50);
+
+            // 5. Cleanup DOM
+            setTimeout(() => flier.remove(), 2100);
+        }
+
+        function flyOn() {
+            // 1. Pick a random blade to land on
+            const targetBlade = blades[Math.floor(Math.random() * blades.length)];
+            const targetRect = targetBlade.getBoundingClientRect();
+
+            // 2. Create flier off screen
+            const startX = Math.random() * window.innerWidth;
+            const startY = -50; // Above screen
+            const flier = createFlyingBug(startX, startY);
+
+            // 3. Animate to target blade
+            // (We aim for the bottom-ish of the blade to ensure it lands on green)
+            const landX = targetRect.left + 5; 
+            const landY = targetRect.top + targetRect.height / 2;
+
+            setTimeout(() => {
+                flier.style.left = landX + 'px';
+                flier.style.top = landY + 'px';
+            }, 50);
+
+            // 4. Transform into sitting bug upon arrival
+            setTimeout(() => {
+                flier.remove();
+                const sitter = document.createElement('div');
+                sitter.classList.add('ladybug');
+                targetBlade.appendChild(sitter);
+            }, 2000); // Must match CSS transition time
+        }
+
+        function hopBlade() {
+            // 1. Pick a bug
+            const sittingBugs = document.querySelectorAll('.blade .ladybug');
+            if (sittingBugs.length === 0) return;
+            const bug = sittingBugs[Math.floor(Math.random() * sittingBugs.length)];
+            
+            // 2. Pick a nearby blade (simple random for now)
+            const targetBlade = blades[Math.floor(Math.random() * blades.length)];
+            
+            // 3. Convert to flier
+            const pos = getGlobalPos(bug);
+            bug.remove();
+            const flier = createFlyingBug(pos.x, pos.y);
+
+            // 4. Fly to new blade
+            const targetRect = targetBlade.getBoundingClientRect();
+            setTimeout(() => {
+                flier.style.left = (targetRect.left + 5) + 'px';
+                flier.style.top = (targetRect.top + 50) + 'px';
+            }, 50);
+
+            // 5. Land
+            setTimeout(() => {
+                flier.remove();
+                const sitter = document.createElement('div');
+                sitter.classList.add('ladybug');
+                targetBlade.appendChild(sitter);
+            }, 2000);
+        }
+
+        initNatureLife(); // Start the cycle
+
+        // --- 4. SCROLL FADE LOGIC ---
         const s1 = document.getElementById('stanza1');
         const s2 = document.getElementById('stanza2');
         const s3 = document.getElementById('stanza3');
@@ -133,12 +244,11 @@
         });
         window.dispatchEvent(new Event('scroll'));
 
-        // --- 4. COUNTDOWN LOGIC ---
+        // --- 5. COUNTDOWN & FIREWORKS LOGIC ---
         const countdownEl = document.getElementById('countdown');
         const finalMsg = document.getElementById('midnightMsg');
         const scrollHint = document.querySelector('.scroll-hint');
         
-        // GMT+8 for Philippines
         const targetDate = new Date("January 1, 2026 00:00:00 GMT+0800").getTime();
         let fireworksEnabled = false;
 
@@ -171,7 +281,7 @@
             fireworksEnabled = true;
         }
 
-        // --- 5. PROFESSIONAL FIREWORKS ENGINE ---
+        // --- 6. FIREWORKS ENGINE ---
         const canvas = document.getElementById('fireworksCanvas');
         const ctx = canvas.getContext('2d');
         canvas.width = window.innerWidth;
@@ -182,95 +292,60 @@
             canvas.height = window.innerHeight;
         });
 
-        // Helper to get random number within range
         function random(min, max) { return Math.random() * (max - min) + min; }
 
         class Particle {
             constructor(x, y, hue) {
-                this.x = x;
-                this.y = y;
-                // Random spread logic
+                this.x = x; this.y = y;
                 const angle = random(0, Math.PI * 2);
                 const speed = random(1, 10);
-                
-                // Physics properties
                 this.vx = Math.cos(angle) * speed;
                 this.vy = Math.sin(angle) * speed;
-                this.friction = 0.95; // Air resistance (makes them slow down)
-                this.gravity = 0.15;  // Pulls them down
-                
+                this.friction = 0.95;
+                this.gravity = 0.15;
                 this.hue = hue;
                 this.brightness = random(50, 80);
                 this.alpha = 1;
-                this.decay = random(0.01, 0.025); // How fast they fade
+                this.decay = random(0.01, 0.025);
             }
-
             update() {
-                // Apply physics
-                this.vx *= this.friction;
-                this.vy *= this.friction;
-                this.vy += this.gravity;
-                
-                this.x += this.vx;
-                this.y += this.vy;
-                this.alpha -= this.decay;
+                this.vx *= this.friction; this.vy *= this.friction; this.vy += this.gravity;
+                this.x += this.vx; this.y += this.vy; this.alpha -= this.decay;
             }
-
             draw() {
                 ctx.save();
-                ctx.globalCompositeOperation = 'lighter'; // Additive blending (GLOW EFFECT)
+                ctx.globalCompositeOperation = 'lighter';
                 ctx.fillStyle = `hsla(${this.hue}, 100%, ${this.brightness}%, ${this.alpha})`;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, 2.5, 0, Math.PI * 2);
-                ctx.fill();
+                ctx.beginPath(); ctx.arc(this.x, this.y, 2.5, 0, Math.PI * 2); ctx.fill();
                 ctx.restore();
             }
         }
 
-        // Rocket that shoots up
         class Firework {
             constructor() {
                 this.x = random(canvas.width * 0.2, canvas.width * 0.8);
                 this.y = canvas.height;
-                
-                // CHANGE 1: Target the very top of the sky (0% to 35%)
                 this.targetY = random(0, canvas.height * 0.35);
-                
-                // CHANGE 2: Increase launch speed so they can actually reach that height
-                // Was (8, 12) -> Now (13, 19)
                 this.speed = random(13, 19); 
-                
-                this.angle = -Math.PI / 2 + random(-0.05, 0.05); // Sharper angle (less tilt)
+                this.angle = -Math.PI / 2 + random(-0.05, 0.05);
                 this.vx = Math.cos(this.angle) * this.speed;
                 this.vy = Math.sin(this.angle) * this.speed;
-                
                 this.hue = random(0, 360);
                 this.brightness = random(50, 70);
                 this.exploded = false;
             }
-
             update() {
-                this.x += this.vx;
-                this.y += this.vy;
-                
-                // CHANGE 3: Lower gravity slightly on the rocket so it maintains momentum longer
-                // Was 0.15 -> Now 0.12
-                this.vy += 0.12; 
-
-                // Explode if we hit the target OR if we start falling down (vy >= 0)
+                this.x += this.vx; this.y += this.vy; this.vy += 0.12;
                 if (this.vy >= 0 || this.y <= this.targetY) {
                     this.exploded = true;
                     createExplosion(this.x, this.y, this.hue);
                 }
             }
-
             draw() {
                 ctx.save();
                 ctx.globalCompositeOperation = 'lighter';
                 ctx.fillStyle = `hsl(${this.hue}, 100%, ${this.brightness}%)`;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, 3, 0, Math.PI * 2);
-                ctx.fill();
+                ctx.beginPath(); ctx.arc(this.x, this.y, 3, 0, Math.PI * 2); ctx.fill();
                 ctx.restore();
             }
         }
@@ -279,54 +354,30 @@
         let particles = [];
 
         function createExplosion(x, y, hue) {
-            // Create 80-100 particles for a dense explosion
-            for (let i = 0; i < 90; i++) {
-                particles.push(new Particle(x, y, hue));
-            }
+            for (let i = 0; i < 90; i++) particles.push(new Particle(x, y, hue));
         }
 
         function loop() {
             requestAnimationFrame(loop);
-
-            // 1. CLEAR CANVAS WITH TRAIL EFFECT
-            // 'destination-out' makes the previous frame transparent over time
-            // causing the trails to fade out naturally.
             ctx.globalCompositeOperation = 'destination-out';
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.2)'; // Adjust alpha for trail length
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // 2. SWITCH TO DRAW MODE
             ctx.globalCompositeOperation = 'source-over';
 
-            if (fireworksEnabled) {
-                // Launch new firework randomly
-                if (Math.random() < 0.03) {
-                    fireworks.push(new Firework());
-                }
-            }
+            if (fireworksEnabled && Math.random() < 0.03) fireworks.push(new Firework());
 
-            // 3. UPDATE & DRAW FIREWORKS (Rockets)
             for (let i = fireworks.length - 1; i >= 0; i--) {
-                fireworks[i].update();
-                fireworks[i].draw();
-                if (fireworks[i].exploded) {
-                    fireworks.splice(i, 1);
-                }
+                fireworks[i].update(); fireworks[i].draw();
+                if (fireworks[i].exploded) fireworks.splice(i, 1);
             }
-
-            // 4. UPDATE & DRAW PARTICLES (Explosions)
             for (let i = particles.length - 1; i >= 0; i--) {
-                particles[i].update();
-                particles[i].draw();
-                if (particles[i].alpha <= 0) {
-                    particles.splice(i, 1);
-                }
+                particles[i].update(); particles[i].draw();
+                if (particles[i].alpha <= 0) particles.splice(i, 1);
             }
         }
         loop();
 
-        // DEBUG: Uncomment to see the fireworks right now
-        startCelebration();
+        // DEBUG: launchNewYear();
     </script>
 </body>
 </html>
