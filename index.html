@@ -231,15 +231,21 @@
             }
         }
 
-        function loop() {
+function loop() {
             requestAnimationFrame(loop);
             
-            // Create trails by not clearing completely
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+            // --- THE FIX STARTS HERE ---
+            // Instead of drawing black on top, we use 'destination-out'
+            // which turns existing pixels transparent (erasing them slowly)
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)'; // Adjust 0.1 for longer/shorter trails
             ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Switch back to normal drawing mode for the new fireworks
+            ctx.globalCompositeOperation = 'source-over';
+            // --- THE FIX ENDS HERE ---
 
             if (fireworksEnabled) {
-                // Randomly launch new fireworks
                 if (Math.random() < 0.05) {
                     fireworks.push(new Firework());
                 }
