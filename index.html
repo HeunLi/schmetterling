@@ -9,8 +9,11 @@
 <body>
 
     <div id="welcome-screen">
-        <h1>Are you ready for 2026?</h1>
-        <button id="enter-btn">Enter the Meadow</button>
+        <div id="welcome-decor-container"></div> <div class="welcome-content">
+            <h1>Are you ready for 2026?</h1>
+            <p style="font-size: 0.8rem; opacity: 0.7; margin-bottom: 10px;">Turn up your volume</p>
+            <button id="enter-btn">Enter the Meadow</button>
+        </div>
     </div>
 
     <div id="stage">
@@ -66,30 +69,42 @@
         <div class="music-info">
             <div class="music-title">Favorite Song Title</div>
             <div class="music-artist">Artist Name</div>
+            
+            <div class="volume-container">
+                <span class="vol-label">Vol</span>
+                <input type="range" id="volume-slider" min="0" max="1" step="0.01" value="0.5">
+            </div>
         </div>
     </div>
     
-    <audio id="newYearAudio" preload="auto">
+    <audio id="newYearAudio" loop>
         <source src="song.mp3" type="audio/mpeg">
     </audio>
 
     <div class="scroll-hint">Scroll down...</div>
 
-<script>
+    <script>
         /* --- ⚙️ SETTINGS --- */
-        // SET THIS TO 'true' TO TEST (Count down 10 seconds from now)
-        // SET THIS TO 'false' FOR THE REAL EVENT (Jan 1, 2026)
         const TEST_MODE = true; 
 
         /* --- GLOBAL VARIABLES --- */
         const welcomeScreen = document.getElementById('welcome-screen');
         const enterBtn = document.getElementById('enter-btn');
         const audio = document.getElementById('newYearAudio');
+        const volumeSlider = document.getElementById('volume-slider');
         
-        // Determine Target Date based on Mode
+        // 1. Initialize Volume
+        audio.volume = 0.5;
+        
+        // 2. Volume Logic
+        volumeSlider.addEventListener('input', (e) => {
+            audio.volume = e.target.value;
+        });
+
+        // Determine Target Date
         let targetDate;
         if (TEST_MODE) {
-            targetDate = new Date().getTime() + 10000; // 10 seconds from now
+            targetDate = new Date().getTime() + 10000; 
         } else {
             targetDate = new Date("January 1, 2026 00:00:00 GMT+0800").getTime();
         }
@@ -98,7 +113,71 @@
         let isPostMidnight = false;
         let fireworksEnabled = false;
 
-        /* --- 0. AUDIO HANDLER & ENTER LOGIC --- */
+        /* --- 0. WELCOME SCREEN DECORATIONS --- */
+        function initWelcomeDecor() {
+            const container = document.getElementById('welcome-decor-container');
+            
+            // 1. Create Floating Leaves
+            for(let i=0; i<20; i++) {
+                const leaf = document.createElement('div');
+                leaf.classList.add('w-leaf');
+                leaf.style.left = Math.random() * 100 + '%';
+                leaf.style.top = Math.random() * 100 + '%';
+                leaf.style.transform = `rotate(${Math.random()*360}deg)`;
+                // Random delays so they don't float in sync
+                leaf.style.animationDelay = (Math.random() * 5) + 's';
+                container.appendChild(leaf);
+            }
+
+            // 2. Create Crawling Bugs
+            for(let i=0; i<6; i++) {
+                const bug = document.createElement('div');
+                bug.classList.add('w-bug');
+                
+                // Start position
+                const startX = Math.random() * window.innerWidth;
+                const startY = Math.random() * window.innerHeight;
+                bug.style.left = startX + 'px';
+                bug.style.top = startY + 'px';
+
+                // Pick a random direction (angle)
+                const angle = Math.random() * 360;
+                bug.style.setProperty('--angle', `${angle}deg`);
+                
+                // Append to container
+                container.appendChild(bug);
+
+                // Simple Movement Logic
+                const speed = 0.5 + Math.random() * 1.5; // pixels per frame
+                const vx = Math.cos(angle * Math.PI / 180) * speed;
+                const vy = Math.sin(angle * Math.PI / 180) * speed;
+
+                function moveBug() {
+                    if(userClicked) return; // Stop if user entered
+                    
+                    let x = parseFloat(bug.style.left);
+                    let y = parseFloat(bug.style.top);
+                    
+                    x += vx;
+                    y += vy;
+
+                    // Wrap around screen
+                    if(x > window.innerWidth) x = -20;
+                    if(x < -20) x = window.innerWidth;
+                    if(y > window.innerHeight) y = -20;
+                    if(y < -20) y = window.innerHeight;
+
+                    bug.style.left = x + 'px';
+                    bug.style.top = y + 'px';
+                    
+                    requestAnimationFrame(moveBug);
+                }
+                moveBug();
+            }
+        }
+        initWelcomeDecor();
+
+        /* --- 0.5 ENTER LOGIC --- */
         enterBtn.addEventListener('click', () => {
             userClicked = true;
             
@@ -106,21 +185,18 @@
             const isAlreadyNewYear = (targetDate - now) <= 0;
 
             if (isAlreadyNewYear) {
-                // If the countdown finished while sitting on the welcome screen:
-                audio.volume = 1.0;
                 audio.currentTime = 0;
                 audio.play().catch(e => console.log("Audio play failed:", e));
             } else {
-                // If still counting down: "Prime" the audio so browser allows it later
+                const currentVol = audio.volume; 
                 audio.volume = 0; 
                 audio.play().then(() => {
                     audio.pause();
                     audio.currentTime = 0;
-                    audio.volume = 1.0; 
+                    audio.volume = currentVol; 
                 }).catch(e => console.log("Audio unlock failed", e));
             }
 
-            // Fade out welcome screen
             welcomeScreen.style.opacity = '0';
             setTimeout(() => {
                 welcomeScreen.style.display = 'none';
@@ -259,104 +335,6 @@
         window.addEventListener('scroll', updateScroll);
         window.dispatchEvent(new Event('scroll'));
 
-        // --- 5. CELEBRATION LOGIC (Unified) ---
+        // --- 5. CELEBRATION LOGIC ---
         const countdownEl = document.getElementById('countdown');
-        const musicWrapper = document.getElementById('music-wrapper');
-
-        function checkTime() {
-            const now = new Date().getTime();
-            const diff = targetDate - now;
-
-            if (diff <= 0) {
-                // Time's up!
-                if (!isPostMidnight) {
-                    startCelebration();
-                }
-            } else {
-                // Counting down
-                const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-                countdownEl.innerText = (hours<10?"0"+hours:hours) + ":" + (minutes<10?"0"+minutes:minutes) + ":" + (seconds<10?"0"+seconds:seconds);
-            }
-        }
-        checkTime();
-        setInterval(checkTime, 1000);
-
-        function startCelebration() {
-            // UI Switches
-            countdownEl.style.display = 'none';
-            document.getElementById('pre-midnight-group').style.display = 'none';
-            document.getElementById('post-midnight-group').style.display = 'block';
-            musicWrapper.style.display = 'flex';
-            
-            isPostMidnight = true;
-            fireworksEnabled = true;
-            window.dispatchEvent(new Event('scroll'));
-            
-            // PLAY MUSIC (If user has entered)
-            if (userClicked) {
-                audio.play().catch(e => console.log("Autoplay prevented:", e));
-            }
-        }
-
-        // --- 6. FIREWORKS & PHYSICS LOOP ---
-        const canvas = document.getElementById('fireworksCanvas');
-        const ctx = canvas.getContext('2d');
-        canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-        window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
-        function random(min, max) { return Math.random() * (max - min) + min; }
-
-        class Particle {
-            constructor(x, y, hue) {
-                this.x = x; this.y = y;
-                const angle = random(0, Math.PI * 2); const speed = random(1, 10);
-                this.vx = Math.cos(angle) * speed; this.vy = Math.sin(angle) * speed;
-                this.friction = 0.95; this.gravity = 0.15;
-                this.hue = hue; this.brightness = random(50, 80); this.alpha = 1; this.decay = random(0.01, 0.025);
-            }
-            update() { this.vx *= this.friction; this.vy *= this.friction; this.vy += this.gravity; this.x += this.vx; this.y += this.vy; this.alpha -= this.decay; }
-            draw() { ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = `hsla(${this.hue}, 100%, ${this.brightness}%, ${this.alpha})`; ctx.beginPath(); ctx.arc(this.x, this.y, 2.5, 0, Math.PI * 2); ctx.fill(); ctx.restore(); }
-        }
-        class Firework {
-            constructor() {
-                this.x = random(canvas.width * 0.2, canvas.width * 0.8); this.y = canvas.height; this.targetY = random(0, canvas.height * 0.35);
-                this.speed = random(13, 19); this.angle = -Math.PI / 2 + random(-0.05, 0.05);
-                this.vx = Math.cos(this.angle) * this.speed; this.vy = Math.sin(this.angle) * this.speed;
-                this.hue = random(0, 360); this.brightness = random(50, 70); this.exploded = false;
-            }
-            update() { this.x += this.vx; this.y += this.vy; this.vy += 0.12; if (this.vy >= 0 || this.y <= this.targetY) { this.exploded = true; createExplosion(this.x, this.y, this.hue); } }
-            draw() { ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = `hsl(${this.hue}, 100%, ${this.brightness}%)`; ctx.beginPath(); ctx.arc(this.x, this.y, 3, 0, Math.PI * 2); ctx.fill(); ctx.restore(); }
-        }
-        function createExplosion(x, y, hue) { for (let i = 0; i < 90; i++) particles.push(new Particle(x, y, hue)); }
-
-        let fireworks = []; let particles = [];
-        function loop() {
-            requestAnimationFrame(loop);
-            ctx.globalCompositeOperation = 'destination-out'; ctx.fillStyle = 'rgba(0, 0, 0, 0.2)'; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.globalCompositeOperation = 'source-over';
-            if (fireworksEnabled && Math.random() < 0.03) fireworks.push(new Firework());
-            for (let i = fireworks.length - 1; i >= 0; i--) { fireworks[i].update(); fireworks[i].draw(); if (fireworks[i].exploded) fireworks.splice(i, 1); }
-            for (let i = particles.length - 1; i >= 0; i--) { particles[i].update(); particles[i].draw(); if (particles[i].alpha <= 0) particles.splice(i, 1); }
-            blades.forEach(blade => {
-                const diff = blade.targetBend - blade.currentBend;
-                if (Math.abs(diff) > 0.1) { blade.currentBend += diff * 0.1; blade.style.setProperty('--cursor-bend', `${blade.currentBend}deg`); }
-                else if (Math.abs(blade.currentBend) > 0.1) { blade.currentBend = blade.targetBend; blade.style.setProperty('--cursor-bend', `${blade.currentBend}deg`); }
-            });
-        }
-        loop();
-
-        // --- 8. MOUSE TRACKING ---
-        document.addEventListener('mousemove', (e) => {
-            const mouseX = e.clientX; const mouseY = e.clientY;
-            const isLowEnough = mouseY > window.innerHeight - 300; 
-            blades.forEach(blade => {
-                if (!isLowEnough) { blade.targetBend = 0; return; }
-                const rect = blade.getBoundingClientRect(); const bladeX = rect.left + rect.width / 2; const dist = mouseX - bladeX;
-                if (Math.abs(dist) < 120) { const force = (1 - Math.abs(dist) / 120) * 35; blade.targetBend = -1 * Math.sign(dist) * force; }
-                else { blade.targetBend = 0; }
-            });
-        });
-        document.addEventListener('mouseleave', () => { blades.forEach(blade => blade.targetBend = 0); });
-    </script>
-</body>
-</html>
+        const musicWrapper = document.getElementById
