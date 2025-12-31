@@ -76,22 +76,51 @@
     <div class="scroll-hint">Scroll down...</div>
 
 <script>
-        /* --- 0. AUDIO UNLOCKER --- */
+        /* --- ⚙️ SETTINGS --- */
+        // SET THIS TO 'true' TO TEST (Count down 10 seconds from now)
+        // SET THIS TO 'false' FOR THE REAL EVENT (Jan 1, 2026)
+        const TEST_MODE = true; 
+
+        /* --- GLOBAL VARIABLES --- */
         const welcomeScreen = document.getElementById('welcome-screen');
         const enterBtn = document.getElementById('enter-btn');
         const audio = document.getElementById('newYearAudio');
+        
+        // Determine Target Date based on Mode
+        let targetDate;
+        if (TEST_MODE) {
+            targetDate = new Date().getTime() + 10000; // 10 seconds from now
+        } else {
+            targetDate = new Date("January 1, 2026 00:00:00 GMT+0800").getTime();
+        }
+        
+        let userClicked = false;
+        let isPostMidnight = false;
+        let fireworksEnabled = false;
 
+        /* --- 0. AUDIO HANDLER & ENTER LOGIC --- */
         enterBtn.addEventListener('click', () => {
-            // 1. "Prime" the audio (Play muted for 0.1s to unlock browser policy)
-            audio.volume = 0; 
-            audio.play().then(() => {
-                // Audio is now unlocked! Pause it and reset.
-                audio.pause();
-                audio.currentTime = 0;
-                audio.volume = 1.0; // Reset volume for later
-            }).catch(e => console.log("Audio unlock failed", e));
+            userClicked = true;
+            
+            const now = new Date().getTime();
+            const isAlreadyNewYear = (targetDate - now) <= 0;
 
-            // 2. Fade out welcome screen
+            if (isAlreadyNewYear) {
+                // If the countdown finished while sitting on the welcome screen:
+                audio.volume = 1.0;
+                audio.currentTime = 0;
+                audio.play().catch(e => console.log("Audio play failed:", e));
+            } else {
+                // If still counting down: "Prime" the audio so browser allows it later
+                audio.volume = 0; 
+                audio.play().then(() => {
+                    audio.pause();
+                    audio.currentTime = 0;
+                    audio.volume = 1.0; 
+                }).catch(e => console.log("Audio unlock failed", e));
+            }
+
+            // Fade out welcome screen
             welcomeScreen.style.opacity = '0';
             setTimeout(() => {
                 welcomeScreen.style.display = 'none';
@@ -111,16 +140,11 @@
             starContainer.appendChild(star);
         }
 
-        // --- 2. SETUP GRASS & LADYBUGS ---
+        // --- 2. SETUP GRASS ---
         const grassContainer = document.getElementById('grass');
         const numBlades = 100;
         const blades = []; 
-
-        const grassPalettes = [
-            ['#0f3d0f', '#2d6a2d'], 
-            ['#0a2b0a', '#1f4f1f'], 
-            ['#051a05', '#133313']  
-        ];
+        const grassPalettes = [['#0f3d0f', '#2d6a2d'], ['#0a2b0a', '#1f4f1f'], ['#051a05', '#133313']];
 
         for(let i=0; i<numBlades; i++) {
             const blade = document.createElement('div');
@@ -129,31 +153,24 @@
             blade.style.height = h + 'px';
             blade.style.left = Math.random() * 100 + '%';
             blade.style.zIndex = Math.floor(h); 
-
             const paletteIndex = Math.floor(Math.random() * grassPalettes.length);
             const colors = grassPalettes[paletteIndex];
             blade.style.background = `linear-gradient(to top, ${colors[0]}, ${colors[1]})`;
-
             const baseAngle = (Math.random() * 40 - 20).toFixed(1);
             const swayRange = (Math.random() * 6 + 2).toFixed(1);
             const delay = (Math.random() * 2).toFixed(1);
             const duration = (Math.random() * 2 + 2).toFixed(1);
-
             blade.style.setProperty('--rotate-base', `${baseAngle}deg`);
             blade.style.setProperty('--sway-range', `${swayRange}deg`);
             blade.style.setProperty('--cursor-bend', '0deg'); 
             blade.style.animationDelay = `${delay}s`;
             blade.style.animationDuration = `${duration}s`;
-            
-            blade.currentBend = 0; 
-            blade.targetBend = 0; 
-
+            blade.currentBend = 0; blade.targetBend = 0; 
             if(Math.random() > 0.90) {
                 const bug = document.createElement('div');
                 bug.classList.add('ladybug');
                 blade.appendChild(bug);
             }
-            
             grassContainer.appendChild(blade);
             blades.push(blade);
         }
@@ -167,98 +184,60 @@
                 else if (action < 0.8) hopBlade();
             }, 1200); 
         }
-
-        function getGlobalPos(el) {
-            const rect = el.getBoundingClientRect();
-            return { x: rect.left, y: rect.top };
-        }
-
+        function getGlobalPos(el) { const rect = el.getBoundingClientRect(); return { x: rect.left, y: rect.top }; }
         function createFlyingBug(startX, startY) {
-            const flier = document.createElement('div');
-            flier.classList.add('ladybug', 'flying');
-            flier.style.position = 'fixed';
-            flier.style.left = startX + 'px';
-            flier.style.top = startY + 'px';
-            document.body.appendChild(flier);
-            return flier;
+            const flier = document.createElement('div'); flier.classList.add('ladybug', 'flying');
+            flier.style.position = 'fixed'; flier.style.left = startX + 'px'; flier.style.top = startY + 'px';
+            document.body.appendChild(flier); return flier;
         }
-
         function animateFlight(flier, targetX, targetY, duration = 2000) {
             const rect = flier.getBoundingClientRect();
-            const deltaX = targetX - rect.left;
-            const deltaY = targetY - rect.top;
-            const angleRad = Math.atan2(deltaY, deltaX);
-            const angleDeg = angleRad * (180 / Math.PI) + 90; 
+            const deltaX = targetX - rect.left; const deltaY = targetY - rect.top;
+            const angleRad = Math.atan2(deltaY, deltaX); const angleDeg = angleRad * (180 / Math.PI) + 90; 
             flier.style.transform = `rotate(${angleDeg}deg)`;
             const curveType = Math.random() > 0.5;
-            const easeX = curveType ? 'ease-in' : 'ease-out';
-            const easeY = curveType ? 'ease-out' : 'ease-in';
-            requestAnimationFrame(() => {
-                flier.style.transition = `left ${duration}ms ${easeX}, top ${duration}ms ${easeY}`;
-                flier.style.left = targetX + 'px';
-                flier.style.top = targetY + 'px';
-            });
+            const easeX = curveType ? 'ease-in' : 'ease-out'; const easeY = curveType ? 'ease-out' : 'ease-in';
+            requestAnimationFrame(() => { flier.style.transition = `left ${duration}ms ${easeX}, top ${duration}ms ${easeY}`; flier.style.left = targetX + 'px'; flier.style.top = targetY + 'px'; });
         }
-
         function flyOff() {
             const sittingBugs = document.querySelectorAll('.blade .ladybug');
             if (sittingBugs.length === 0) return;
             const bug = sittingBugs[Math.floor(Math.random() * sittingBugs.length)];
-            const pos = getGlobalPos(bug);
-            bug.remove();
+            const pos = getGlobalPos(bug); bug.remove();
             const flier = createFlyingBug(pos.x, pos.y);
-            const targetX = pos.x + (Math.random() * 400 - 200);
-            const targetY = -100; 
-            animateFlight(flier, targetX, targetY, 2000);
-            setTimeout(() => flier.remove(), 2100);
+            const targetX = pos.x + (Math.random() * 400 - 200); const targetY = -100; 
+            animateFlight(flier, targetX, targetY, 2000); setTimeout(() => flier.remove(), 2100);
         }
-
         function flyOn() {
             const targetBlade = blades[Math.floor(Math.random() * blades.length)];
             const targetRect = targetBlade.getBoundingClientRect();
-            const startX = Math.random() * window.innerWidth;
-            const startY = -50; 
+            const startX = Math.random() * window.innerWidth; const startY = -50; 
             const flier = createFlyingBug(startX, startY);
-            const landX = targetRect.left + 5; 
-            const landY = targetRect.top + targetRect.height / 2;
+            const landX = targetRect.left + 5; const landY = targetRect.top + targetRect.height / 2;
             animateFlight(flier, landX, landY, 2000);
-            setTimeout(() => {
-                flier.remove();
-                const sitter = document.createElement('div');
-                sitter.classList.add('ladybug');
-                targetBlade.appendChild(sitter);
-            }, 2000); 
+            setTimeout(() => { flier.remove(); const sitter = document.createElement('div'); sitter.classList.add('ladybug'); targetBlade.appendChild(sitter); }, 2000); 
         }
-
         function hopBlade() {
             const sittingBugs = document.querySelectorAll('.blade .ladybug');
             if (sittingBugs.length === 0) return;
             const bug = sittingBugs[Math.floor(Math.random() * sittingBugs.length)];
             const targetBlade = blades[Math.floor(Math.random() * blades.length)];
-            const pos = getGlobalPos(bug);
-            bug.remove();
+            const pos = getGlobalPos(bug); bug.remove();
             const flier = createFlyingBug(pos.x, pos.y);
             const targetRect = targetBlade.getBoundingClientRect();
-            const landX = targetRect.left + 5;
-            const landY = targetRect.top + targetRect.height / 2; 
+            const landX = targetRect.left + 5; const landY = targetRect.top + targetRect.height / 2; 
             animateFlight(flier, landX, landY, 2000);
-            setTimeout(() => {
-                flier.remove();
-                const sitter = document.createElement('div');
-                sitter.classList.add('ladybug');
-                targetBlade.appendChild(sitter);
-            }, 2000);
+            setTimeout(() => { flier.remove(); const sitter = document.createElement('div'); sitter.classList.add('ladybug'); targetBlade.appendChild(sitter); }, 2000);
         }
         initNatureLife(); 
 
-        // --- 4. SCROLL FADE LOGIC ---
+        // --- 4. SCROLL LOGIC ---
         const s1 = document.getElementById('stanza1');
         const s2 = document.getElementById('stanza2');
         const s3 = document.getElementById('stanza3');
         const s4 = document.getElementById('stanza4');
         const s5 = document.getElementById('stanza5');
         const s6 = document.getElementById('stanza6');
-        let isPostMidnight = false;
 
         function updateScroll() {
             const scrollTotal = document.body.scrollHeight - window.innerHeight;
@@ -280,44 +259,48 @@
         window.addEventListener('scroll', updateScroll);
         window.dispatchEvent(new Event('scroll'));
 
-        // --- 5. CELEBRATION LOGIC ---
+        // --- 5. CELEBRATION LOGIC (Unified) ---
         const countdownEl = document.getElementById('countdown');
         const musicWrapper = document.getElementById('music-wrapper');
-        const targetDate = new Date("January 1, 2026 00:00:00 GMT+0800").getTime();
-        let fireworksEnabled = false;
 
-        const timer = setInterval(() => {
+        function checkTime() {
             const now = new Date().getTime();
             const diff = targetDate - now;
 
             if (diff <= 0) {
-                clearInterval(timer);
-                startCelebration();
+                // Time's up!
+                if (!isPostMidnight) {
+                    startCelebration();
+                }
             } else {
+                // Counting down
                 const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                 const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
                 const seconds = Math.floor((diff % (1000 * 60)) / 1000);
                 countdownEl.innerText = (hours<10?"0"+hours:hours) + ":" + (minutes<10?"0"+minutes:minutes) + ":" + (seconds<10?"0"+seconds:seconds);
             }
-        }, 1000);
+        }
+        checkTime();
+        setInterval(checkTime, 1000);
 
         function startCelebration() {
+            // UI Switches
             countdownEl.style.display = 'none';
             document.getElementById('pre-midnight-group').style.display = 'none';
             document.getElementById('post-midnight-group').style.display = 'block';
             musicWrapper.style.display = 'flex';
             
-            // Try to play audio (if unlocked by button)
-            const audio = document.getElementById('newYearAudio');
-            audio.currentTime = 0;
-            audio.play().catch(e => console.log("Still blocked"));
-
             isPostMidnight = true;
-            window.dispatchEvent(new Event('scroll'));
             fireworksEnabled = true;
+            window.dispatchEvent(new Event('scroll'));
+            
+            // PLAY MUSIC (If user has entered)
+            if (userClicked) {
+                audio.play().catch(e => console.log("Autoplay prevented:", e));
+            }
         }
 
-        // --- 6. FIREWORKS & PHYSICS ---
+        // --- 6. FIREWORKS & PHYSICS LOOP ---
         const canvas = document.getElementById('fireworksCanvas');
         const ctx = canvas.getContext('2d');
         canvas.width = window.innerWidth; canvas.height = window.innerHeight;
@@ -374,7 +357,6 @@
             });
         });
         document.addEventListener('mouseleave', () => { blades.forEach(blade => blade.targetBend = 0); });
-        startCelebration();
     </script>
 </body>
 </html>
