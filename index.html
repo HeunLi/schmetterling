@@ -62,7 +62,7 @@
         // --- 2. SETUP GRASS & LADYBUGS ---
         const grassContainer = document.getElementById('grass');
         const numBlades = 100;
-        const blades = []; // Store blades for easy access later
+        const blades = []; 
 
         const grassPalettes = [
             ['#0f3d0f', '#2d6a2d'], 
@@ -93,7 +93,6 @@
             blade.style.animationDelay = `${delay}s`;
             blade.style.animationDuration = `${duration}s`;
 
-            // Initial Ladybug Population (Sparse, so we can fly more in)
             if(Math.random() > 0.90) {
                 const bug = document.createElement('div');
                 bug.classList.add('ladybug');
@@ -108,20 +107,10 @@
         function initNatureLife() {
             setInterval(() => {
                 const action = Math.random();
-                
-                // 30% chance to fly OFF screen
-                if (action < 0.3) {
-                    flyOff();
-                } 
-                // 30% chance to fly ON screen
-                else if (action < 0.6) {
-                    flyOn();
-                }
-                // 20% chance to HOP blades
-                else if (action < 0.8) {
-                    hopBlade();
-                }
-            }, 1500); // Check for action every 1.5 seconds
+                if (action < 0.3) flyOff();
+                else if (action < 0.6) flyOn();
+                else if (action < 0.8) hopBlade();
+            }, 1200); // Slightly faster activity
         }
 
         function getGlobalPos(el) {
@@ -139,81 +128,86 @@
             return flier;
         }
 
+        // Helper to apply a curved path and rotation
+        function animateFlight(flier, targetX, targetY, duration = 2000) {
+            // 1. Calculate Rotation (Face the target)
+            const rect = flier.getBoundingClientRect();
+            const deltaX = targetX - rect.left;
+            const deltaY = targetY - rect.top;
+            const angleRad = Math.atan2(deltaY, deltaX);
+            const angleDeg = angleRad * (180 / Math.PI) + 90; // +90 because bug sprite points up
+            
+            flier.style.transform = `rotate(${angleDeg}deg)`;
+
+            // 2. Apply Curved Transition
+            // By mixing ease-in and ease-out on different axes, we get an arc!
+            const curveType = Math.random() > 0.5;
+            const easeX = curveType ? 'ease-in' : 'ease-out';
+            const easeY = curveType ? 'ease-out' : 'ease-in';
+            
+            // Allow a tiny delay for the transform to set before moving
+            requestAnimationFrame(() => {
+                flier.style.transition = `left ${duration}ms ${easeX}, top ${duration}ms ${easeY}`;
+                flier.style.left = targetX + 'px';
+                flier.style.top = targetY + 'px';
+            });
+        }
+
         function flyOff() {
-            // 1. Find a bug that is currently sitting
             const sittingBugs = document.querySelectorAll('.blade .ladybug');
             if (sittingBugs.length === 0) return;
             
             const bug = sittingBugs[Math.floor(Math.random() * sittingBugs.length)];
             const pos = getGlobalPos(bug);
-
-            // 2. Remove sitting bug
             bug.remove();
 
-            // 3. Create flying bug at same spot
             const flier = createFlyingBug(pos.x, pos.y);
+            
+            const targetX = pos.x + (Math.random() * 400 - 200);
+            const targetY = -100; // Fly off top
 
-            // 4. Animate off screen (random direction up)
-            setTimeout(() => {
-                flier.style.top = '-50px';
-                flier.style.left = (pos.x + (Math.random() * 200 - 100)) + 'px';
-            }, 50);
+            animateFlight(flier, targetX, targetY, 2000);
 
-            // 5. Cleanup DOM
             setTimeout(() => flier.remove(), 2100);
         }
 
         function flyOn() {
-            // 1. Pick a random blade to land on
             const targetBlade = blades[Math.floor(Math.random() * blades.length)];
             const targetRect = targetBlade.getBoundingClientRect();
 
-            // 2. Create flier off screen
             const startX = Math.random() * window.innerWidth;
-            const startY = -50; // Above screen
+            const startY = -50; 
             const flier = createFlyingBug(startX, startY);
 
-            // 3. Animate to target blade
-            // (We aim for the bottom-ish of the blade to ensure it lands on green)
             const landX = targetRect.left + 5; 
             const landY = targetRect.top + targetRect.height / 2;
 
-            setTimeout(() => {
-                flier.style.left = landX + 'px';
-                flier.style.top = landY + 'px';
-            }, 50);
+            animateFlight(flier, landX, landY, 2000);
 
-            // 4. Transform into sitting bug upon arrival
             setTimeout(() => {
                 flier.remove();
                 const sitter = document.createElement('div');
                 sitter.classList.add('ladybug');
                 targetBlade.appendChild(sitter);
-            }, 2000); // Must match CSS transition time
+            }, 2000); 
         }
 
         function hopBlade() {
-            // 1. Pick a bug
             const sittingBugs = document.querySelectorAll('.blade .ladybug');
             if (sittingBugs.length === 0) return;
             const bug = sittingBugs[Math.floor(Math.random() * sittingBugs.length)];
-            
-            // 2. Pick a nearby blade (simple random for now)
             const targetBlade = blades[Math.floor(Math.random() * blades.length)];
             
-            // 3. Convert to flier
             const pos = getGlobalPos(bug);
             bug.remove();
             const flier = createFlyingBug(pos.x, pos.y);
 
-            // 4. Fly to new blade
             const targetRect = targetBlade.getBoundingClientRect();
-            setTimeout(() => {
-                flier.style.left = (targetRect.left + 5) + 'px';
-                flier.style.top = (targetRect.top + 50) + 'px';
-            }, 50);
+            const landX = targetRect.left + 5;
+            const landY = targetRect.top + targetRect.height / 2; // Middle of blade
 
-            // 5. Land
+            animateFlight(flier, landX, landY, 2000);
+
             setTimeout(() => {
                 flier.remove();
                 const sitter = document.createElement('div');
@@ -222,7 +216,7 @@
             }, 2000);
         }
 
-        initNatureLife(); // Start the cycle
+        initNatureLife(); 
 
         // --- 4. SCROLL FADE LOGIC ---
         const s1 = document.getElementById('stanza1');
@@ -376,8 +370,6 @@
             }
         }
         loop();
-
-        // DEBUG: launchNewYear();
     </script>
 </body>
 </html>

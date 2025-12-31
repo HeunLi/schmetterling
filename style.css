@@ -169,10 +169,22 @@ body {
 
 /* --- LADYBUG WINGS & FLIGHT --- */
 
-/* When flying, we show wings */
+/* When flying, we show wings AND add jitter/noise */
 .ladybug.flying {
-    z-index: 100 !important; /* Always on top */
-    transition: all 2s ease-in-out; /* Smooth movement for flight */
+    z-index: 100 !important;
+    /* We handle the 'transition' (movement path) in JS now to create curves */
+    
+    /* The "Noise" Animation: rapid shaking while moving */
+    animation: wobble 0.2s infinite linear; 
+}
+
+/* The erratic buzzing motion */
+@keyframes wobble {
+    0% { transform: translate(0, 0) rotate(0deg); }
+    25% { transform: translate(-3px, 2px) rotate(-5deg); }
+    50% { transform: translate(3px, -2px) rotate(5deg); }
+    75% { transform: translate(-2px, 3px) rotate(-3deg); }
+    100% { transform: translate(0, 0) rotate(0deg); }
 }
 
 /* Wing Left */
@@ -181,22 +193,22 @@ body {
     position: absolute;
     top: 0; left: 50%;
     width: 7px; height: 14px;
-    background: rgba(255, 255, 255, 0.4); /* Transparent white wing */
+    background: rgba(255, 255, 255, 0.4); 
     border-radius: 50% 0 0 50%;
     transform-origin: right center;
-    animation: flap-left 0.1s infinite alternate;
+    animation: flap-left 0.05s infinite alternate; /* Faster flapping */
 }
 
 /* Wing Right */
 .ladybug.flying::after {
     content: '';
     position: absolute;
-    top: 0; right: 50%; /* Adjusted for right side */
+    top: 0; right: 50%; 
     width: 7px; height: 14px;
     background: rgba(255, 255, 255, 0.4);
     border-radius: 0 50% 50% 0;
     transform-origin: left center;
-    animation: flap-right 0.1s infinite alternate;
+    animation: flap-right 0.05s infinite alternate; /* Faster flapping */
 }
 
 @keyframes flap-left {
