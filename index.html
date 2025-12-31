@@ -93,6 +93,10 @@
             blade.style.setProperty('--cursor-bend', '0deg'); 
             blade.style.animationDelay = `${delay}s`;
             blade.style.animationDuration = `${duration}s`;
+            
+            // PHYSICS PROPERTIES FOR SMOOTHING
+            blade.currentBend = 0; // Where the grass is right now
+            blade.targetBend = 0;  // Where the mouse wants it to be
 
             if(Math.random() > 0.90) {
                 const bug = document.createElement('div');
@@ -344,8 +348,11 @@
             for (let i = 0; i < 90; i++) particles.push(new Particle(x, y, hue));
         }
 
+        // --- 7. MASTER ANIMATION LOOP (Merged Fireworks & Grass Physics) ---
         function loop() {
             requestAnimationFrame(loop);
+
+            // --- A. FIREWORKS LOGIC ---
             ctx.globalCompositeOperation = 'destination-out';
             ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -361,21 +368,37 @@
                 particles[i].update(); particles[i].draw();
                 if (particles[i].alpha <= 0) particles.splice(i, 1);
             }
-        }
-        loop();
 
-        // --- 7. MOUSE INTERACTION (FIXED) ---
-        // Logic: Push grass away from cursor, but reset properly when mouse leaves or goes high.
-        
-        function updateGrassBend(mouseX, mouseY) {
-             // We still check height for *applying* force to make it feel natural (only affects bottom),
-             // BUT we iterate all blades to reset them if the mouse is too high.
-             const isLowEnough = mouseY > window.innerHeight - 300; 
+            // --- B. GRASS PHYSICS LOGIC (SMOOTHING) ---
+            // "Lerp" (Linear Interpolation) moves current value to target value slowly
+            blades.forEach(blade => {
+                const diff = blade.targetBend - blade.currentBend;
+                
+                // If there is a noticeable difference, update properties
+                if (Math.abs(diff) > 0.1) {
+                    blade.currentBend += diff * 0.1; // 0.1 is the "Speed" (Lower = smoother/slower)
+                    blade.style.setProperty('--cursor-bend', `${blade.currentBend}deg`);
+                } else if (Math.abs(blade.currentBend) > 0.1) {
+                    // Snap to 0 if very close to stop calculations
+                    blade.currentBend = blade.targetBend;
+                    blade.style.setProperty('--cursor-bend', `${blade.currentBend}deg`);
+                }
+            });
+        }
+        loop(); // Start the master loop
+
+
+        // --- 8. MOUSE TRACKING ---
+        // We only set the TARGET here. The Loop handles the movement.
+        document.addEventListener('mousemove', (e) => {
+            const mouseX = e.clientX;
+            const mouseY = e.clientY;
+            
+            const isLowEnough = mouseY > window.innerHeight - 300; 
 
             blades.forEach(blade => {
-                // If mouse is too high, force reset immediately
                 if (!isLowEnough) {
-                    blade.style.setProperty('--cursor-bend', '0deg');
+                    blade.targetBend = 0;
                     return;
                 }
 
@@ -383,25 +406,18 @@
                 const bladeX = rect.left + rect.width / 2;
                 const dist = mouseX - bladeX;
                 
-                // Interaction Radius: 120px
                 if (Math.abs(dist) < 120) {
-                    // FORCE REDUCED: Was 60, now 30 for a gentler touch
-                    const force = (1 - Math.abs(dist) / 120) * 30; 
-                    const bend = -1 * Math.sign(dist) * force;
-                    blade.style.setProperty('--cursor-bend', `${bend}deg`);
+                    const force = (1 - Math.abs(dist) / 120) * 35; // Max 35 deg
+                    blade.targetBend = -1 * Math.sign(dist) * force;
                 } else {
-                    blade.style.setProperty('--cursor-bend', '0deg');
+                    blade.targetBend = 0;
                 }
             });
-        }
-
-        document.addEventListener('mousemove', (e) => {
-            updateGrassBend(e.clientX, e.clientY);
         });
 
-        // Safety: If mouse leaves the window, reset everything
+        // Safety reset
         document.addEventListener('mouseleave', () => {
-            blades.forEach(blade => blade.style.setProperty('--cursor-bend', '0deg'));
+            blades.forEach(blade => blade.targetBend = 0);
         });
     </script>
 </body>

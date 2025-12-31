@@ -1,13 +1,6 @@
 /* --- RESET & BASIC SETUP --- */
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
-/* --- 1. MAGIC SAUCE: Smooths out the grass variables --- */
-@property --cursor-bend {
-    syntax: '<angle>';
-    initial-value: 0deg;
-    inherits: false;
-}
-
 body {
     background: linear-gradient(to bottom, #020111 0%, #191621 100%);
     color: white;
@@ -101,7 +94,7 @@ body {
     bottom: 0;
     left: 0;
     width: 100%;
-    height: 360px;
+    height: 180px;
     z-index: 20;
     pointer-events: all; 
     overflow: hidden; 
@@ -118,10 +111,9 @@ body {
     /* CSS Variables */
     --rotate-base: 0deg; 
     --sway-range: 5deg;
-    --cursor-bend: 0deg; 
+    --cursor-bend: 0deg; /* Updated by JS Physics */
     
-    /* SMOOTH PHYSICS: This creates the gentle 'bounce back' feel */
-    transition: --cursor-bend 1s cubic-bezier(0.16, 1, 0.3, 1);
+    /* Note: We removed the CSS transition here because JS handles the smoothing now */
     
     animation: sway 3s infinite ease-in-out alternate;
 }
