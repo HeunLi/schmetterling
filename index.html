@@ -45,12 +45,12 @@
 
     <div class="scroll-hint">Scroll down...</div>
 
-    <script>
+<script>
         // --- 1. SETUP STARS ---
         const starContainer = document.getElementById('stars');
         for(let i=0; i<150; i++) {
             const star = document.createElement('div');
-            star.classList.add('star');
+            star.className = 'star'; // changed to className for cleaner code
             star.style.left = Math.random() * 100 + '%';
             star.style.top = Math.random() * 60 + '%'; 
             star.style.width = Math.random() * 3 + 'px';
@@ -64,7 +64,7 @@
         const numBlades = 80;
         for(let i=0; i<numBlades; i++) {
             const blade = document.createElement('div');
-            blade.classList.add('blade');
+            blade.className = 'blade';
             
             const h = 60 + Math.random() * 80; 
             blade.style.height = h + 'px';
@@ -74,7 +74,7 @@
 
             if(Math.random() > 0.85) {
                 const bug = document.createElement('div');
-                bug.classList.add('ladybug');
+                bug.className = 'ladybug';
                 blade.appendChild(bug);
             }
             grassContainer.appendChild(blade);
@@ -91,17 +91,11 @@
             const pct = scrollPos / scrollTotal; 
 
             if (pct < 0.25) {
-                s1.style.opacity = 1;
-                s2.style.opacity = 0;
-                s3.style.opacity = 0;
+                s1.style.opacity = 1; s2.style.opacity = 0; s3.style.opacity = 0;
             } else if (pct >= 0.25 && pct < 0.6) {
-                s1.style.opacity = 0;
-                s2.style.opacity = 1;
-                s3.style.opacity = 0;
+                s1.style.opacity = 0; s2.style.opacity = 1; s3.style.opacity = 0;
             } else {
-                s1.style.opacity = 0;
-                s2.style.opacity = 0;
-                s3.style.opacity = 1;
+                s1.style.opacity = 0; s2.style.opacity = 0; s3.style.opacity = 1;
             }
         });
         window.dispatchEvent(new Event('scroll'));
@@ -111,6 +105,7 @@
         const finalMsg = document.getElementById('midnightMsg');
         const scrollHint = document.querySelector('.scroll-hint');
         
+        // GMT+8 for Philippines
         const targetDate = new Date("January 1, 2026 00:00:00 GMT+0800").getTime();
         let fireworksEnabled = false;
 
@@ -143,7 +138,7 @@
             fireworksEnabled = true;
         }
 
-        // --- 5. CUSTOM FIREWORKS ENGINE ---
+        // --- 5. PROFESSIONAL FIREWORKS ENGINE ---
         const canvas = document.getElementById('fireworksCanvas');
         const ctx = canvas.getContext('2d');
         canvas.width = window.innerWidth;
@@ -154,104 +149,124 @@
             canvas.height = window.innerHeight;
         });
 
+        // Helper to get random number within range
+        function random(min, max) { return Math.random() * (max - min) + min; }
+
         class Particle {
-            constructor(x, y, color) {
+            constructor(x, y, hue) {
                 this.x = x;
                 this.y = y;
-                this.color = color;
-                // Explosion burst velocity
-                const angle = Math.random() * Math.PI * 2;
-                const speed = Math.random() * 4 + 1;
+                // Random spread logic
+                const angle = random(0, Math.PI * 2);
+                const speed = random(1, 10);
+                
+                // Physics properties
                 this.vx = Math.cos(angle) * speed;
                 this.vy = Math.sin(angle) * speed;
+                this.friction = 0.95; // Air resistance (makes them slow down)
+                this.gravity = 0.15;  // Pulls them down
+                
+                this.hue = hue;
+                this.brightness = random(50, 80);
                 this.alpha = 1;
-                this.decay = Math.random() * 0.015 + 0.015;
+                this.decay = random(0.01, 0.025); // How fast they fade
             }
 
             update() {
+                // Apply physics
+                this.vx *= this.friction;
+                this.vy *= this.friction;
+                this.vy += this.gravity;
+                
                 this.x += this.vx;
                 this.y += this.vy;
-                this.vy += 0.05; // Gravity
                 this.alpha -= this.decay;
             }
 
             draw() {
                 ctx.save();
-                ctx.globalAlpha = this.alpha;
-                ctx.fillStyle = this.color;
+                ctx.globalCompositeOperation = 'lighter'; // Additive blending (GLOW EFFECT)
+                ctx.fillStyle = `hsla(${this.hue}, 100%, ${this.brightness}%, ${this.alpha})`;
                 ctx.beginPath();
-                ctx.arc(this.x, this.y, 2, 0, Math.PI * 2);
+                ctx.arc(this.x, this.y, 2.5, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.restore();
             }
         }
 
+        // Rocket that shoots up
         class Firework {
             constructor() {
-                this.x = Math.random() * canvas.width;
+                this.x = random(canvas.width * 0.2, canvas.width * 0.8);
                 this.y = canvas.height;
-                this.targetY = Math.random() * (canvas.height / 2); // Explode in top half
-                this.speed = Math.random() * 3 + 4;
-                this.radius = 2;
-                this.color = `hsl(${Math.random() * 360}, 100%, 50%)`;
+                this.targetY = random(canvas.height * 0.1, canvas.height * 0.4);
+                this.speed = random(8, 12);
+                this.angle = -Math.PI / 2 + random(-0.1, 0.1); // Slight tilt
+                this.vx = Math.cos(this.angle) * this.speed;
+                this.vy = Math.sin(this.angle) * this.speed;
+                
+                this.hue = random(0, 360);
+                this.brightness = random(50, 70);
                 this.exploded = false;
             }
 
             update() {
-                // Move up
-                this.y -= this.speed;
+                this.x += this.vx;
+                this.y += this.vy;
+                
+                // Gravity on the rocket itself (slows it down as it rises)
+                this.vy += 0.15; 
 
-                // If reached target, explode
-                if (this.y <= this.targetY) {
+                // If it starts falling or hits target height, explode
+                if (this.vy >= 0 || this.y <= this.targetY) {
                     this.exploded = true;
-                    createParticles(this.x, this.y, this.color);
+                    createExplosion(this.x, this.y, this.hue);
                 }
             }
 
             draw() {
-                ctx.fillStyle = this.color;
+                ctx.save();
+                ctx.globalCompositeOperation = 'lighter';
+                ctx.fillStyle = `hsl(${this.hue}, 100%, ${this.brightness}%)`;
                 ctx.beginPath();
+                // Draw a small "trail" tail
                 ctx.arc(this.x, this.y, 3, 0, Math.PI * 2);
                 ctx.fill();
-                
-                // Trail
-                ctx.fillStyle = 'rgba(255,255,255,0.2)';
-                ctx.beginPath();
-                ctx.arc(this.x, this.y + 5, 2, 0, Math.PI * 2);
-                ctx.fill();
+                ctx.restore();
             }
         }
 
         let fireworks = [];
         let particles = [];
 
-        function createParticles(x, y, color) {
-            for (let i = 0; i < 50; i++) { // 50 particles per explosion
-                particles.push(new Particle(x, y, color));
+        function createExplosion(x, y, hue) {
+            // Create 80-100 particles for a dense explosion
+            for (let i = 0; i < 90; i++) {
+                particles.push(new Particle(x, y, hue));
             }
         }
 
-function loop() {
+        function loop() {
             requestAnimationFrame(loop);
-            
-            // --- THE FIX STARTS HERE ---
-            // Instead of drawing black on top, we use 'destination-out'
-            // which turns existing pixels transparent (erasing them slowly)
+
+            // 1. CLEAR CANVAS WITH TRAIL EFFECT
+            // 'destination-out' makes the previous frame transparent over time
+            // causing the trails to fade out naturally.
             ctx.globalCompositeOperation = 'destination-out';
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)'; // Adjust 0.1 for longer/shorter trails
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.2)'; // Adjust alpha for trail length
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            // Switch back to normal drawing mode for the new fireworks
+
+            // 2. SWITCH TO DRAW MODE
             ctx.globalCompositeOperation = 'source-over';
-            // --- THE FIX ENDS HERE ---
 
             if (fireworksEnabled) {
-                if (Math.random() < 0.05) {
+                // Launch new firework randomly
+                if (Math.random() < 0.03) {
                     fireworks.push(new Firework());
                 }
             }
 
-            // Update Fireworks
+            // 3. UPDATE & DRAW FIREWORKS (Rockets)
             for (let i = fireworks.length - 1; i >= 0; i--) {
                 fireworks[i].update();
                 fireworks[i].draw();
@@ -260,7 +275,7 @@ function loop() {
                 }
             }
 
-            // Update Particles
+            // 4. UPDATE & DRAW PARTICLES (Explosions)
             for (let i = particles.length - 1; i >= 0; i--) {
                 particles[i].update();
                 particles[i].draw();
@@ -271,7 +286,7 @@ function loop() {
         }
         loop();
 
-        // DEBUG: Uncomment to test immediately
+        // DEBUG: Uncomment to see the fireworks right now
         startCelebration();
     </script>
 </body>
