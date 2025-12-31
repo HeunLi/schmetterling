@@ -55,11 +55,22 @@
                     <span style="font-size: 1rem; color: white;">Here's to 2026.</span>
                 </div>
             </div>
-
         </div>
 
         <div class="grass-container" id="grass"></div>
     </div>
+
+    <div id="music-wrapper">
+        <div class="spinner-disc"></div>
+        <div class="music-info">
+            <div class="music-title">Favorite Song</div>
+            <div class="music-artist">Artist Name</div>
+        </div>
+    </div>
+    
+    <audio id="newYearAudio">
+        <source src="applecider.mp3" type="audio/mpeg">
+    </audio>
 
     <div class="scroll-hint">Scroll down...</div>
 
@@ -112,6 +123,7 @@
             blade.style.animationDelay = `${delay}s`;
             blade.style.animationDuration = `${duration}s`;
             
+            // Physics Props
             blade.currentBend = 0; 
             blade.targetBend = 0; 
 
@@ -232,7 +244,7 @@
 
         initNatureLife(); 
 
-        // --- 4. NEW SCROLL FADE LOGIC (Handles 2 Chapters) ---
+        // --- 4. SCROLL FADE LOGIC ---
         const s1 = document.getElementById('stanza1');
         const s2 = document.getElementById('stanza2');
         const s3 = document.getElementById('stanza3');
@@ -240,7 +252,7 @@
         const s5 = document.getElementById('stanza5');
         const s6 = document.getElementById('stanza6');
 
-        let isPostMidnight = false; // Flag to track chapter
+        let isPostMidnight = false;
 
         function updateScroll() {
             const scrollTotal = document.body.scrollHeight - window.innerHeight;
@@ -248,37 +260,26 @@
             const pct = scrollPos / scrollTotal; 
 
             if (!isPostMidnight) {
-                // CHAPTER 1: PRE-MIDNIGHT
-                s4.style.opacity = 0; s5.style.opacity = 0; s6.style.opacity = 0; // Ensure hidden
-                
-                if (pct < 0.25) {
-                    s1.style.opacity = 1; s2.style.opacity = 0; s3.style.opacity = 0;
-                } else if (pct >= 0.25 && pct < 0.6) {
-                    s1.style.opacity = 0; s2.style.opacity = 1; s3.style.opacity = 0;
-                } else {
-                    s1.style.opacity = 0; s2.style.opacity = 0; s3.style.opacity = 1;
-                }
+                s4.style.opacity = 0; s5.style.opacity = 0; s6.style.opacity = 0;
+                if (pct < 0.25) { s1.style.opacity = 1; s2.style.opacity = 0; s3.style.opacity = 0; }
+                else if (pct >= 0.25 && pct < 0.6) { s1.style.opacity = 0; s2.style.opacity = 1; s3.style.opacity = 0; }
+                else { s1.style.opacity = 0; s2.style.opacity = 0; s3.style.opacity = 1; }
             } else {
-                // CHAPTER 2: POST-MIDNIGHT
-                s1.style.opacity = 0; s2.style.opacity = 0; s3.style.opacity = 0; // Ensure hidden
-                
-                if (pct < 0.25) {
-                    s4.style.opacity = 1; s5.style.opacity = 0; s6.style.opacity = 0;
-                } else if (pct >= 0.25 && pct < 0.6) {
-                    s4.style.opacity = 0; s5.style.opacity = 1; s6.style.opacity = 0;
-                } else {
-                    s4.style.opacity = 0; s5.style.opacity = 0; s6.style.opacity = 1;
-                }
+                s1.style.opacity = 0; s2.style.opacity = 0; s3.style.opacity = 0;
+                if (pct < 0.25) { s4.style.opacity = 1; s5.style.opacity = 0; s6.style.opacity = 0; }
+                else if (pct >= 0.25 && pct < 0.6) { s4.style.opacity = 0; s5.style.opacity = 1; s6.style.opacity = 0; }
+                else { s4.style.opacity = 0; s5.style.opacity = 0; s6.style.opacity = 1; }
             }
         }
-
         window.addEventListener('scroll', updateScroll);
         window.dispatchEvent(new Event('scroll'));
 
-        // --- 5. COUNTDOWN & CELEBRATION TRIGGER ---
+        // --- 5. COUNTDOWN & CELEBRATION ---
         const countdownEl = document.getElementById('countdown');
-        const scrollHint = document.querySelector('.scroll-hint');
+        const musicWrapper = document.getElementById('music-wrapper');
+        const audio = document.getElementById('newYearAudio');
         
+        // Target: Jan 1 2026 GMT+8
         const targetDate = new Date("January 1, 2026 00:00:00 GMT+0800").getTime();
         let fireworksEnabled = false;
 
@@ -302,162 +303,85 @@
         }, 1000);
 
         function startCelebration() {
-            // 1. Hide Countdown
+            // 1. Switch UI
             countdownEl.style.display = 'none';
-            
-            // 2. Switch Text Sets
             document.getElementById('pre-midnight-group').style.display = 'none';
             document.getElementById('post-midnight-group').style.display = 'block';
             
-            // 3. Update Flag
-            isPostMidnight = true;
-            
-            // 4. Force scroll update to show the first new stanza immediately
-            window.dispatchEvent(new Event('scroll'));
+            // 2. Show Music UI & Play
+            musicWrapper.style.display = 'flex';
+            audio.play().catch(e => console.log("User interaction needed for audio"));
 
-            // 5. Start Fireworks
+            // 3. Enable Fireworks & Physics
+            isPostMidnight = true;
             fireworksEnabled = true;
+            window.dispatchEvent(new Event('scroll'));
         }
 
-        // --- 6. FIREWORKS ENGINE ---
+        // --- 6. FIREWORKS & 7. PHYSICS LOOP ---
         const canvas = document.getElementById('fireworksCanvas');
         const ctx = canvas.getContext('2d');
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
 
-        window.addEventListener('resize', () => {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        });
-
+        window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
         function random(min, max) { return Math.random() * (max - min) + min; }
 
         class Particle {
             constructor(x, y, hue) {
                 this.x = x; this.y = y;
-                const angle = random(0, Math.PI * 2);
-                const speed = random(1, 10);
-                this.vx = Math.cos(angle) * speed;
-                this.vy = Math.sin(angle) * speed;
-                this.friction = 0.95;
-                this.gravity = 0.15;
-                this.hue = hue;
-                this.brightness = random(50, 80);
-                this.alpha = 1;
-                this.decay = random(0.01, 0.025);
+                const angle = random(0, Math.PI * 2); const speed = random(1, 10);
+                this.vx = Math.cos(angle) * speed; this.vy = Math.sin(angle) * speed;
+                this.friction = 0.95; this.gravity = 0.15;
+                this.hue = hue; this.brightness = random(50, 80); this.alpha = 1; this.decay = random(0.01, 0.025);
             }
-            update() {
-                this.vx *= this.friction; this.vy *= this.friction; this.vy += this.gravity;
-                this.x += this.vx; this.y += this.vy; this.alpha -= this.decay;
-            }
-            draw() {
-                ctx.save();
-                ctx.globalCompositeOperation = 'lighter';
-                ctx.fillStyle = `hsla(${this.hue}, 100%, ${this.brightness}%, ${this.alpha})`;
-                ctx.beginPath(); ctx.arc(this.x, this.y, 2.5, 0, Math.PI * 2); ctx.fill();
-                ctx.restore();
-            }
+            update() { this.vx *= this.friction; this.vy *= this.friction; this.vy += this.gravity; this.x += this.vx; this.y += this.vy; this.alpha -= this.decay; }
+            draw() { ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = `hsla(${this.hue}, 100%, ${this.brightness}%, ${this.alpha})`; ctx.beginPath(); ctx.arc(this.x, this.y, 2.5, 0, Math.PI * 2); ctx.fill(); ctx.restore(); }
         }
-
         class Firework {
             constructor() {
-                this.x = random(canvas.width * 0.2, canvas.width * 0.8);
-                this.y = canvas.height;
-                this.targetY = random(0, canvas.height * 0.35);
-                this.speed = random(13, 19); 
-                this.angle = -Math.PI / 2 + random(-0.05, 0.05);
-                this.vx = Math.cos(this.angle) * this.speed;
-                this.vy = Math.sin(this.angle) * this.speed;
-                this.hue = random(0, 360);
-                this.brightness = random(50, 70);
-                this.exploded = false;
+                this.x = random(canvas.width * 0.2, canvas.width * 0.8); this.y = canvas.height; this.targetY = random(0, canvas.height * 0.35);
+                this.speed = random(13, 19); this.angle = -Math.PI / 2 + random(-0.05, 0.05);
+                this.vx = Math.cos(this.angle) * this.speed; this.vy = Math.sin(this.angle) * this.speed;
+                this.hue = random(0, 360); this.brightness = random(50, 70); this.exploded = false;
             }
-            update() {
-                this.x += this.vx; this.y += this.vy; this.vy += 0.12;
-                if (this.vy >= 0 || this.y <= this.targetY) {
-                    this.exploded = true;
-                    createExplosion(this.x, this.y, this.hue);
-                }
-            }
-            draw() {
-                ctx.save();
-                ctx.globalCompositeOperation = 'lighter';
-                ctx.fillStyle = `hsl(${this.hue}, 100%, ${this.brightness}%)`;
-                ctx.beginPath(); ctx.arc(this.x, this.y, 3, 0, Math.PI * 2); ctx.fill();
-                ctx.restore();
-            }
+            update() { this.x += this.vx; this.y += this.vy; this.vy += 0.12; if (this.vy >= 0 || this.y <= this.targetY) { this.exploded = true; createExplosion(this.x, this.y, this.hue); } }
+            draw() { ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = `hsl(${this.hue}, 100%, ${this.brightness}%)`; ctx.beginPath(); ctx.arc(this.x, this.y, 3, 0, Math.PI * 2); ctx.fill(); ctx.restore(); }
         }
-
-        let fireworks = [];
-        let particles = [];
-
-        function createExplosion(x, y, hue) {
-            for (let i = 0; i < 90; i++) particles.push(new Particle(x, y, hue));
-        }
+        let fireworks = []; let particles = [];
+        function createExplosion(x, y, hue) { for (let i = 0; i < 90; i++) particles.push(new Particle(x, y, hue)); }
 
         function loop() {
             requestAnimationFrame(loop);
-
-            ctx.globalCompositeOperation = 'destination-out';
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.globalCompositeOperation = 'source-over';
+            ctx.globalCompositeOperation = 'destination-out'; ctx.fillStyle = 'rgba(0, 0, 0, 0.2)'; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.globalCompositeOperation = 'source-over';
 
             if (fireworksEnabled && Math.random() < 0.03) fireworks.push(new Firework());
 
-            for (let i = fireworks.length - 1; i >= 0; i--) {
-                fireworks[i].update(); fireworks[i].draw();
-                if (fireworks[i].exploded) fireworks.splice(i, 1);
-            }
-            for (let i = particles.length - 1; i >= 0; i--) {
-                particles[i].update(); particles[i].draw();
-                if (particles[i].alpha <= 0) particles.splice(i, 1);
-            }
+            for (let i = fireworks.length - 1; i >= 0; i--) { fireworks[i].update(); fireworks[i].draw(); if (fireworks[i].exploded) fireworks.splice(i, 1); }
+            for (let i = particles.length - 1; i >= 0; i--) { particles[i].update(); particles[i].draw(); if (particles[i].alpha <= 0) particles.splice(i, 1); }
 
             blades.forEach(blade => {
                 const diff = blade.targetBend - blade.currentBend;
-                if (Math.abs(diff) > 0.1) {
-                    blade.currentBend += diff * 0.1; 
-                    blade.style.setProperty('--cursor-bend', `${blade.currentBend}deg`);
-                } else if (Math.abs(blade.currentBend) > 0.1) {
-                    blade.currentBend = blade.targetBend;
-                    blade.style.setProperty('--cursor-bend', `${blade.currentBend}deg`);
-                }
+                if (Math.abs(diff) > 0.1) { blade.currentBend += diff * 0.1; blade.style.setProperty('--cursor-bend', `${blade.currentBend}deg`); }
+                else if (Math.abs(blade.currentBend) > 0.1) { blade.currentBend = blade.targetBend; blade.style.setProperty('--cursor-bend', `${blade.currentBend}deg`); }
             });
         }
         loop();
 
         // --- 8. MOUSE TRACKING ---
         document.addEventListener('mousemove', (e) => {
-            const mouseX = e.clientX;
-            const mouseY = e.clientY;
-            
+            const mouseX = e.clientX; const mouseY = e.clientY;
             const isLowEnough = mouseY > window.innerHeight - 300; 
-
             blades.forEach(blade => {
-                if (!isLowEnough) {
-                    blade.targetBend = 0;
-                    return;
-                }
-
-                const rect = blade.getBoundingClientRect();
-                const bladeX = rect.left + rect.width / 2;
-                const dist = mouseX - bladeX;
-                
-                if (Math.abs(dist) < 120) {
-                    const force = (1 - Math.abs(dist) / 120) * 35;
-                    blade.targetBend = -1 * Math.sign(dist) * force;
-                } else {
-                    blade.targetBend = 0;
-                }
+                if (!isLowEnough) { blade.targetBend = 0; return; }
+                const rect = blade.getBoundingClientRect(); const bladeX = rect.left + rect.width / 2; const dist = mouseX - bladeX;
+                if (Math.abs(dist) < 120) { const force = (1 - Math.abs(dist) / 120) * 35; blade.targetBend = -1 * Math.sign(dist) * force; }
+                else { blade.targetBend = 0; }
             });
         });
+        document.addEventListener('mouseleave', () => { blades.forEach(blade => blade.targetBend = 0); });
 
-        document.addEventListener('mouseleave', () => {
-            blades.forEach(blade => blade.targetBend = 0);
-        });
-
-        // DEBUG: Uncomment to test the 'After Midnight' view immediately
+        // DEBUG: Uncomment to test immediate music playback
         startCelebration();
     </script>
 </body>
