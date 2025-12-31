@@ -26,39 +26,59 @@
         <div class="content-wrapper">
             <div id="pre-midnight-group">
                 <div class="stanza" id="stanza1">
-                    In the quiet of the fields,<br>
-                    under a blanket of stars,<br>
-                    I watched the year grow,<br>
-                    much like the grass beneath our feet.
+                    I'm really glad we met again,<br>
+                    A chance I thought I had lost.<br>
+                    Yet here we are, and it feels natural<br>
+                    I can't even begin to say how happy I am.
                 </div>
                 <div class="stanza" id="stanza2">
-                    They say ladybugs are a sign of luck,<br>
-                    a small spark in a wide world.<br>
-                    To me, that spark has always been you.
+                    Our laughter together still comforts me,<br>
+                    Like it has always did back then.<br>
+                    I had found myself again, enjoying your company,<br>
+                    More than I probably should.
                 </div>
                 <div class="stanza" id="stanza3">
-                    As the clock resets and the sky ignites,<br>
-                    I have just one wish for us...
+                    I'm genuinely happy we could talk again,<br>
+                    Over the years I would try to move on.<br>
+                    However, I have realized that I have not really.<br>
+                    I hope that isn't too much to say.
+                </div>
+                <div class="stanza" id="stanza4">
+                    There is a 2nd-part to this by the way,<br>
+                    So come back when it is New Year's to read it.<br>
+                    🤣🤣😂
                 </div>
             </div>
 
             <div id="post-midnight-group" class="post-midnight">
-                <div class="stanza" id="stanza4">
-                    The sky is awake now,<br>
-                    painted with light and noise.<br>
-                    But down here in the grass,<br>
-                    the world is still ours.
-                </div>
                 <div class="stanza" id="stanza5">
-                    Let this new year bring you<br>
-                    wings to fly and ground to stand on.<br>
-                    Let every day be a discovery.
+                    It has always been a dream,<br>
+                    To be by your side beneath the night sky.<br>
+                    Watching the stars flickering and fireworks in the distance.<br>
+                    Celebrating New Year's together like that.
                 </div>
                 <div class="stanza" id="stanza6">
+                    So I made this imitation,<br>
+                    So that not even the distance that prevented us<br>
+                    Could come in between.
+                </div>
+                <div class="stanza" id="stanza7">
+                    I hope you know that as you gaze upward,<br>
+                    To look at the stars and the sky from where you are,<br>
+                    Know that I am also looking at the same stars with you!<br>
+                    (even though it's like morning for me now)
+                </div>
+                <div class="stanza" id="stanza8">
+                    Now, again, I find myself hoping<br>
+                    For that day when I could be underneath the same night sky<br>
+                    Next to you, and sharing laughter over the smallest things<br>
+                    A dream I once had, and a dream that has come again.
+                </div>
+                <div class="stanza" id="stanza9">
                     <span style="font-size: 2rem; color: #ffd700; font-weight: bold; text-shadow: 0 0 20px #ffd700;">
                         HAPPY NEW YEAR!
                     </span><br>
-                    <span style="font-size: 1rem; color: white;">Here's to 2026.</span>
+                    <span style="font-size: 1rem; color: white;">Wishing you all the best, always.</span>
                 </div>
             </div>
         </div>
@@ -105,7 +125,8 @@
         if (TEST_MODE) {
             targetDate = new Date().getTime() + 10000; 
         } else {
-            targetDate = new Date("January 1, 2026 00:00:00 GMT+0800").getTime();
+            // UPDATED: GMT+0100 (Germany/CET)
+            targetDate = new Date("January 1, 2026 00:00:00 GMT+0100").getTime();
         }
         
         let userClicked = false;
@@ -120,7 +141,7 @@
             for(let i=0; i<15; i++) {
                 const leaf = document.createElement('div');
                 leaf.classList.add('w-leaf');
-                leaf.style.left = Math.random() * 90 + '%'; // Keep within screen
+                leaf.style.left = Math.random() * 90 + '%'; 
                 leaf.style.top = Math.random() * 90 + '%';
                 leaf.style.transform = `rotate(${Math.random()*360}deg)`;
                 leaf.style.animationDelay = (Math.random() * 5) + 's';
@@ -131,40 +152,27 @@
             for(let i=0; i<8; i++) {
                 const bug = document.createElement('div');
                 bug.classList.add('w-bug');
-                
-                // Random position
                 const startX = Math.random() * window.innerWidth;
                 const startY = Math.random() * window.innerHeight;
-                
                 bug.style.left = startX + 'px';
                 bug.style.top = startY + 'px';
-                
-                // Random Direction
                 const angle = Math.random() * 360;
                 bug.style.setProperty('--angle', `${angle}deg`);
-                
                 container.appendChild(bug);
 
-                // Movement Math
                 const speed = 0.8 + Math.random() * 1.5; 
                 const rad = angle * (Math.PI / 180);
                 const vx = Math.cos(rad) * speed;
                 const vy = Math.sin(rad) * speed;
 
                 const moveBug = () => {
-                    if(userClicked) return; // Stop if page entered
-                    
-                    // Get current pos
+                    if(userClicked) return; 
                     let x = parseFloat(bug.style.left);
                     let y = parseFloat(bug.style.top);
+                    x += vx; y += vy;
                     
-                    x += vx;
-                    y += vy;
-
-                    // Screen Wrap Logic
                     const w = window.innerWidth;
                     const h = window.innerHeight;
-                    
                     if(x > w + 20) x = -20;
                     if(x < -20) x = w + 20;
                     if(y > h + 20) y = -20;
@@ -172,21 +180,16 @@
 
                     bug.style.left = x + 'px';
                     bug.style.top = y + 'px';
-                    
                     requestAnimationFrame(moveBug);
                 };
-                
-                // Start Loop
                 requestAnimationFrame(moveBug);
             }
         }
-        // Run decoration logic
         initWelcomeDecor();
 
         /* --- 0.5 ENTER LOGIC --- */
         enterBtn.addEventListener('click', () => {
             userClicked = true;
-            
             const now = new Date().getTime();
             const isAlreadyNewYear = (targetDate - now) <= 0;
 
@@ -209,7 +212,7 @@
             }, 1000);
         });
 
-        // --- 1. SETUP STARS ---
+        // --- 1. SETUP STARS & 2. GRASS ---
         const starContainer = document.getElementById('stars');
         for(let i=0; i<150; i++) {
             const star = document.createElement('div');
@@ -221,13 +224,10 @@
             star.style.animationDuration = (Math.random() * 2 + 1) + 's';
             starContainer.appendChild(star);
         }
-
-        // --- 2. SETUP GRASS ---
         const grassContainer = document.getElementById('grass');
         const numBlades = 100;
         const blades = []; 
         const grassPalettes = [['#0f3d0f', '#2d6a2d'], ['#0a2b0a', '#1f4f1f'], ['#051a05', '#133313']];
-
         for(let i=0; i<numBlades; i++) {
             const blade = document.createElement('div');
             blade.classList.add('blade');
@@ -313,29 +313,37 @@
         }
         initNatureLife(); 
 
-        // --- 4. SCROLL LOGIC ---
+        // --- 4. SCROLL LOGIC (UPDATED FOR NEW STANZAS) ---
         const s1 = document.getElementById('stanza1');
         const s2 = document.getElementById('stanza2');
         const s3 = document.getElementById('stanza3');
         const s4 = document.getElementById('stanza4');
         const s5 = document.getElementById('stanza5');
         const s6 = document.getElementById('stanza6');
+        const s7 = document.getElementById('stanza7');
+        const s8 = document.getElementById('stanza8');
+        const s9 = document.getElementById('stanza9');
 
         function updateScroll() {
             const scrollTotal = document.body.scrollHeight - window.innerHeight;
             const scrollPos = window.scrollY;
             const pct = scrollPos / scrollTotal; 
+            const show = (el) => el.style.opacity = 1;
+            const hide = (...els) => els.forEach(el => el.style.opacity = 0);
 
             if (!isPostMidnight) {
-                s4.style.opacity = 0; s5.style.opacity = 0; s6.style.opacity = 0;
-                if (pct < 0.25) { s1.style.opacity = 1; s2.style.opacity = 0; s3.style.opacity = 0; }
-                else if (pct >= 0.25 && pct < 0.6) { s1.style.opacity = 0; s2.style.opacity = 1; s3.style.opacity = 0; }
-                else { s1.style.opacity = 0; s2.style.opacity = 0; s3.style.opacity = 1; }
+                hide(s5, s6, s7, s8, s9);
+                if (pct < 0.25) { show(s1); hide(s2, s3, s4); }
+                else if (pct < 0.50) { show(s2); hide(s1, s3, s4); }
+                else if (pct < 0.75) { show(s3); hide(s1, s2, s4); }
+                else { show(s4); hide(s1, s2, s3); }
             } else {
-                s1.style.opacity = 0; s2.style.opacity = 0; s3.style.opacity = 0;
-                if (pct < 0.25) { s4.style.opacity = 1; s5.style.opacity = 0; s6.style.opacity = 0; }
-                else if (pct >= 0.25 && pct < 0.6) { s4.style.opacity = 0; s5.style.opacity = 1; s6.style.opacity = 0; }
-                else { s4.style.opacity = 0; s5.style.opacity = 0; s6.style.opacity = 1; }
+                hide(s1, s2, s3, s4);
+                if (pct < 0.20) { show(s5); hide(s6, s7, s8, s9); }
+                else if (pct < 0.40) { show(s6); hide(s5, s7, s8, s9); }
+                else if (pct < 0.60) { show(s7); hide(s5, s6, s8, s9); }
+                else if (pct < 0.80) { show(s8); hide(s5, s6, s7, s9); }
+                else { show(s9); hide(s5, s6, s7, s8); }
             }
         }
         window.addEventListener('scroll', updateScroll);
@@ -368,11 +376,9 @@
             document.getElementById('pre-midnight-group').style.display = 'none';
             document.getElementById('post-midnight-group').style.display = 'block';
             musicWrapper.style.display = 'flex';
-            
             isPostMidnight = true;
             fireworksEnabled = true;
             window.dispatchEvent(new Event('scroll'));
-            
             if (userClicked) {
                 audio.play().catch(e => console.log("Autoplay prevented:", e));
             }
