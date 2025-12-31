@@ -8,6 +8,11 @@
 </head>
 <body>
 
+    <div id="welcome-screen">
+        <h1>Are you ready for 2026?</h1>
+        <button id="enter-btn">Enter the Meadow</button>
+    </div>
+
     <div id="stage">
         <div id="stars"></div>
         <canvas id="fireworksCanvas"></canvas>
@@ -21,13 +26,11 @@
                     I watched the year grow,<br>
                     much like the grass beneath our feet.
                 </div>
-                
                 <div class="stanza" id="stanza2">
                     They say ladybugs are a sign of luck,<br>
                     a small spark in a wide world.<br>
                     To me, that spark has always been you.
                 </div>
-
                 <div class="stanza" id="stanza3">
                     As the clock resets and the sky ignites,<br>
                     I have just one wish for us...
@@ -41,13 +44,11 @@
                     But down here in the grass,<br>
                     the world is still ours.
                 </div>
-                
                 <div class="stanza" id="stanza5">
                     Let this new year bring you<br>
                     wings to fly and ground to stand on.<br>
                     Let every day be a discovery.
                 </div>
-
                 <div class="stanza" id="stanza6">
                     <span style="font-size: 2rem; color: #ffd700; font-weight: bold; text-shadow: 0 0 20px #ffd700;">
                         HAPPY NEW YEAR!
@@ -63,18 +64,40 @@
     <div id="music-wrapper">
         <div class="spinner-disc"></div>
         <div class="music-info">
-            <div class="music-title">Favorite Song</div>
+            <div class="music-title">Favorite Song Title</div>
             <div class="music-artist">Artist Name</div>
         </div>
     </div>
     
-    <audio id="newYearAudio">
-        <source src="applecider.mp3" type="audio/mpeg">
+    <audio id="newYearAudio" preload="auto">
+        <source src="song.mp3" type="audio/mpeg">
     </audio>
 
     <div class="scroll-hint">Scroll down...</div>
 
-    <script>
+<script>
+        /* --- 0. AUDIO UNLOCKER --- */
+        const welcomeScreen = document.getElementById('welcome-screen');
+        const enterBtn = document.getElementById('enter-btn');
+        const audio = document.getElementById('newYearAudio');
+
+        enterBtn.addEventListener('click', () => {
+            // 1. "Prime" the audio (Play muted for 0.1s to unlock browser policy)
+            audio.volume = 0; 
+            audio.play().then(() => {
+                // Audio is now unlocked! Pause it and reset.
+                audio.pause();
+                audio.currentTime = 0;
+                audio.volume = 1.0; // Reset volume for later
+            }).catch(e => console.log("Audio unlock failed", e));
+
+            // 2. Fade out welcome screen
+            welcomeScreen.style.opacity = '0';
+            setTimeout(() => {
+                welcomeScreen.style.display = 'none';
+            }, 1000);
+        });
+
         // --- 1. SETUP STARS ---
         const starContainer = document.getElementById('stars');
         for(let i=0; i<150; i++) {
@@ -102,7 +125,6 @@
         for(let i=0; i<numBlades; i++) {
             const blade = document.createElement('div');
             blade.classList.add('blade');
-            
             const h = 100 + Math.random() * 150; 
             blade.style.height = h + 'px';
             blade.style.left = Math.random() * 100 + '%';
@@ -123,7 +145,6 @@
             blade.style.animationDelay = `${delay}s`;
             blade.style.animationDuration = `${duration}s`;
             
-            // Physics Props
             blade.currentBend = 0; 
             blade.targetBend = 0; 
 
@@ -168,13 +189,10 @@
             const deltaY = targetY - rect.top;
             const angleRad = Math.atan2(deltaY, deltaX);
             const angleDeg = angleRad * (180 / Math.PI) + 90; 
-            
             flier.style.transform = `rotate(${angleDeg}deg)`;
-
             const curveType = Math.random() > 0.5;
             const easeX = curveType ? 'ease-in' : 'ease-out';
             const easeY = curveType ? 'ease-out' : 'ease-in';
-            
             requestAnimationFrame(() => {
                 flier.style.transition = `left ${duration}ms ${easeX}, top ${duration}ms ${easeY}`;
                 flier.style.left = targetX + 'px';
@@ -188,11 +206,9 @@
             const bug = sittingBugs[Math.floor(Math.random() * sittingBugs.length)];
             const pos = getGlobalPos(bug);
             bug.remove();
-
             const flier = createFlyingBug(pos.x, pos.y);
             const targetX = pos.x + (Math.random() * 400 - 200);
             const targetY = -100; 
-
             animateFlight(flier, targetX, targetY, 2000);
             setTimeout(() => flier.remove(), 2100);
         }
@@ -200,16 +216,12 @@
         function flyOn() {
             const targetBlade = blades[Math.floor(Math.random() * blades.length)];
             const targetRect = targetBlade.getBoundingClientRect();
-
             const startX = Math.random() * window.innerWidth;
             const startY = -50; 
             const flier = createFlyingBug(startX, startY);
-
             const landX = targetRect.left + 5; 
             const landY = targetRect.top + targetRect.height / 2;
-
             animateFlight(flier, landX, landY, 2000);
-
             setTimeout(() => {
                 flier.remove();
                 const sitter = document.createElement('div');
@@ -223,17 +235,13 @@
             if (sittingBugs.length === 0) return;
             const bug = sittingBugs[Math.floor(Math.random() * sittingBugs.length)];
             const targetBlade = blades[Math.floor(Math.random() * blades.length)];
-            
             const pos = getGlobalPos(bug);
             bug.remove();
             const flier = createFlyingBug(pos.x, pos.y);
-
             const targetRect = targetBlade.getBoundingClientRect();
             const landX = targetRect.left + 5;
             const landY = targetRect.top + targetRect.height / 2; 
-
             animateFlight(flier, landX, landY, 2000);
-
             setTimeout(() => {
                 flier.remove();
                 const sitter = document.createElement('div');
@@ -241,7 +249,6 @@
                 targetBlade.appendChild(sitter);
             }, 2000);
         }
-
         initNatureLife(); 
 
         // --- 4. SCROLL FADE LOGIC ---
@@ -251,7 +258,6 @@
         const s4 = document.getElementById('stanza4');
         const s5 = document.getElementById('stanza5');
         const s6 = document.getElementById('stanza6');
-
         let isPostMidnight = false;
 
         function updateScroll() {
@@ -274,12 +280,9 @@
         window.addEventListener('scroll', updateScroll);
         window.dispatchEvent(new Event('scroll'));
 
-        // --- 5. COUNTDOWN & CELEBRATION ---
+        // --- 5. CELEBRATION LOGIC ---
         const countdownEl = document.getElementById('countdown');
         const musicWrapper = document.getElementById('music-wrapper');
-        const audio = document.getElementById('newYearAudio');
-        
-        // Target: Jan 1 2026 GMT+8
         const targetDate = new Date("January 1, 2026 00:00:00 GMT+0800").getTime();
         let fireworksEnabled = false;
 
@@ -294,36 +297,30 @@
                 const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                 const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
                 const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-                
-                countdownEl.innerText = 
-                    (hours < 10 ? "0" + hours : hours) + ":" + 
-                    (minutes < 10 ? "0" + minutes : minutes) + ":" + 
-                    (seconds < 10 ? "0" + seconds : seconds);
+                countdownEl.innerText = (hours<10?"0"+hours:hours) + ":" + (minutes<10?"0"+minutes:minutes) + ":" + (seconds<10?"0"+seconds:seconds);
             }
         }, 1000);
 
         function startCelebration() {
-            // 1. Switch UI
             countdownEl.style.display = 'none';
             document.getElementById('pre-midnight-group').style.display = 'none';
             document.getElementById('post-midnight-group').style.display = 'block';
-            
-            // 2. Show Music UI & Play
             musicWrapper.style.display = 'flex';
-            audio.play().catch(e => console.log("User interaction needed for audio"));
+            
+            // Try to play audio (if unlocked by button)
+            const audio = document.getElementById('newYearAudio');
+            audio.currentTime = 0;
+            audio.play().catch(e => console.log("Still blocked"));
 
-            // 3. Enable Fireworks & Physics
             isPostMidnight = true;
-            fireworksEnabled = true;
             window.dispatchEvent(new Event('scroll'));
+            fireworksEnabled = true;
         }
 
-        // --- 6. FIREWORKS & 7. PHYSICS LOOP ---
+        // --- 6. FIREWORKS & PHYSICS ---
         const canvas = document.getElementById('fireworksCanvas');
         const ctx = canvas.getContext('2d');
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-
+        canvas.width = window.innerWidth; canvas.height = window.innerHeight;
         window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
         function random(min, max) { return Math.random() * (max - min) + min; }
 
@@ -348,18 +345,15 @@
             update() { this.x += this.vx; this.y += this.vy; this.vy += 0.12; if (this.vy >= 0 || this.y <= this.targetY) { this.exploded = true; createExplosion(this.x, this.y, this.hue); } }
             draw() { ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = `hsl(${this.hue}, 100%, ${this.brightness}%)`; ctx.beginPath(); ctx.arc(this.x, this.y, 3, 0, Math.PI * 2); ctx.fill(); ctx.restore(); }
         }
-        let fireworks = []; let particles = [];
         function createExplosion(x, y, hue) { for (let i = 0; i < 90; i++) particles.push(new Particle(x, y, hue)); }
 
+        let fireworks = []; let particles = [];
         function loop() {
             requestAnimationFrame(loop);
             ctx.globalCompositeOperation = 'destination-out'; ctx.fillStyle = 'rgba(0, 0, 0, 0.2)'; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.globalCompositeOperation = 'source-over';
-
             if (fireworksEnabled && Math.random() < 0.03) fireworks.push(new Firework());
-
             for (let i = fireworks.length - 1; i >= 0; i--) { fireworks[i].update(); fireworks[i].draw(); if (fireworks[i].exploded) fireworks.splice(i, 1); }
             for (let i = particles.length - 1; i >= 0; i--) { particles[i].update(); particles[i].draw(); if (particles[i].alpha <= 0) particles.splice(i, 1); }
-
             blades.forEach(blade => {
                 const diff = blade.targetBend - blade.currentBend;
                 if (Math.abs(diff) > 0.1) { blade.currentBend += diff * 0.1; blade.style.setProperty('--cursor-bend', `${blade.currentBend}deg`); }
@@ -380,8 +374,6 @@
             });
         });
         document.addEventListener('mouseleave', () => { blades.forEach(blade => blade.targetBend = 0); });
-
-        // DEBUG: Uncomment to test immediate music playback
         startCelebration();
     </script>
 </body>
