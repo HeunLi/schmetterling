@@ -178,8 +178,8 @@ body {
 /* --- MUSIC SPINNER UI (GLASS CARD STLYE) --- */
 #music-wrapper {
     position: fixed;
-    top: 25%; /* Moved to top */
-    left: 5%; /* Moved to left side */
+    top: 50%; /* Moved to top */
+    left: 25%; /* Moved to left side */
     z-index: 50; /* Above stars, below welcome screen */
     display: none; /* Hidden until midnight */
     align-items: center;
