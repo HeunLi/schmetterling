@@ -90,6 +90,7 @@
 
             blade.style.setProperty('--rotate-base', `${baseAngle}deg`);
             blade.style.setProperty('--sway-range', `${swayRange}deg`);
+            blade.style.setProperty('--cursor-bend', '0deg'); // Init
             blade.style.animationDelay = `${delay}s`;
             blade.style.animationDuration = `${duration}s`;
 
@@ -110,7 +111,7 @@
                 if (action < 0.3) flyOff();
                 else if (action < 0.6) flyOn();
                 else if (action < 0.8) hopBlade();
-            }, 1200); // Slightly faster activity
+            }, 1200); 
         }
 
         function getGlobalPos(el) {
@@ -128,24 +129,19 @@
             return flier;
         }
 
-        // Helper to apply a curved path and rotation
         function animateFlight(flier, targetX, targetY, duration = 2000) {
-            // 1. Calculate Rotation (Face the target)
             const rect = flier.getBoundingClientRect();
             const deltaX = targetX - rect.left;
             const deltaY = targetY - rect.top;
             const angleRad = Math.atan2(deltaY, deltaX);
-            const angleDeg = angleRad * (180 / Math.PI) + 90; // +90 because bug sprite points up
+            const angleDeg = angleRad * (180 / Math.PI) + 90; 
             
             flier.style.transform = `rotate(${angleDeg}deg)`;
 
-            // 2. Apply Curved Transition
-            // By mixing ease-in and ease-out on different axes, we get an arc!
             const curveType = Math.random() > 0.5;
             const easeX = curveType ? 'ease-in' : 'ease-out';
             const easeY = curveType ? 'ease-out' : 'ease-in';
             
-            // Allow a tiny delay for the transform to set before moving
             requestAnimationFrame(() => {
                 flier.style.transition = `left ${duration}ms ${easeX}, top ${duration}ms ${easeY}`;
                 flier.style.left = targetX + 'px';
@@ -156,18 +152,15 @@
         function flyOff() {
             const sittingBugs = document.querySelectorAll('.blade .ladybug');
             if (sittingBugs.length === 0) return;
-            
             const bug = sittingBugs[Math.floor(Math.random() * sittingBugs.length)];
             const pos = getGlobalPos(bug);
             bug.remove();
 
             const flier = createFlyingBug(pos.x, pos.y);
-            
             const targetX = pos.x + (Math.random() * 400 - 200);
-            const targetY = -100; // Fly off top
+            const targetY = -100; 
 
             animateFlight(flier, targetX, targetY, 2000);
-
             setTimeout(() => flier.remove(), 2100);
         }
 
@@ -204,7 +197,7 @@
 
             const targetRect = targetBlade.getBoundingClientRect();
             const landX = targetRect.left + 5;
-            const landY = targetRect.top + targetRect.height / 2; // Middle of blade
+            const landY = targetRect.top + targetRect.height / 2; 
 
             animateFlight(flier, landX, landY, 2000);
 
@@ -238,7 +231,7 @@
         });
         window.dispatchEvent(new Event('scroll'));
 
-        // --- 5. COUNTDOWN & FIREWORKS LOGIC ---
+        // --- 5. COUNTDOWN & FIREWORKS ---
         const countdownEl = document.getElementById('countdown');
         const finalMsg = document.getElementById('midnightMsg');
         const scrollHint = document.querySelector('.scroll-hint');
@@ -370,6 +363,39 @@
             }
         }
         loop();
+
+        // --- 7. MOUSE INTERACTION (DISPLACE GRASS) ---
+        document.addEventListener('mousemove', (e) => {
+            const mouseX = e.clientX;
+            const mouseY = e.clientY;
+            
+            // Only calculate if mouse is near the bottom (performance optimization)
+            if (mouseY < window.innerHeight - 250) return; 
+
+            blades.forEach(blade => {
+                const rect = blade.getBoundingClientRect();
+                const bladeX = rect.left + rect.width / 2;
+                
+                // Calculate horizontal distance
+                const dist = mouseX - bladeX;
+                
+                // Interaction Radius: 120px
+                if (Math.abs(dist) < 120) {
+                    // Calculate force: closer = stronger push
+                    // Maximum bend: 60 degrees
+                    // Math.sign(dist) determines direction (push left or right)
+                    const force = (1 - Math.abs(dist) / 120) * 60; 
+                    
+                    // If mouse is to the right (dist > 0), push left (negative rotation)
+                    // If mouse is to the left (dist < 0), push right (positive rotation)
+                    const bend = -1 * Math.sign(dist) * force;
+                    
+                    blade.style.setProperty('--cursor-bend', `${bend}deg`);
+                } else {
+                    blade.style.setProperty('--cursor-bend', '0deg');
+                }
+            });
+        });
     </script>
 </body>
 </html>
