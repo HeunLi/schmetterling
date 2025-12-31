@@ -68,6 +68,11 @@ body {
     text-shadow: 0 0 10px rgba(255,255,255,0.5);
 }
 
+/* New Class for the second set of text */
+.post-midnight {
+    display: none; /* Hidden by default */
+}
+
 .final-message {
     font-size: 2rem;
     color: #ffd700;
@@ -111,9 +116,7 @@ body {
     /* CSS Variables */
     --rotate-base: 0deg; 
     --sway-range: 5deg;
-    --cursor-bend: 0deg; /* Updated by JS Physics */
-    
-    /* Note: We removed the CSS transition here because JS handles the smoothing now */
+    --cursor-bend: 0deg; 
     
     animation: sway 3s infinite ease-in-out alternate;
 }

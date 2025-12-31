@@ -10,34 +10,52 @@
 
     <div id="stage">
         <div id="stars"></div>
-        
         <canvas id="fireworksCanvas"></canvas>
-
         <div id="countdown">00:00:00</div>
 
         <div class="content-wrapper">
-            <div class="stanza" id="stanza1">
-                In the quiet of the fields,<br>
-                under a blanket of stars,<br>
-                I watched the year grow,<br>
-                much like the grass beneath our feet.
-            </div>
-            
-            <div class="stanza" id="stanza2">
-                They say ladybugs are a sign of luck,<br>
-                a small spark in a wide world.<br>
-                To me, that spark has always been you.
+            <div id="pre-midnight-group">
+                <div class="stanza" id="stanza1">
+                    In the quiet of the fields,<br>
+                    under a blanket of stars,<br>
+                    I watched the year grow,<br>
+                    much like the grass beneath our feet.
+                </div>
+                
+                <div class="stanza" id="stanza2">
+                    They say ladybugs are a sign of luck,<br>
+                    a small spark in a wide world.<br>
+                    To me, that spark has always been you.
+                </div>
+
+                <div class="stanza" id="stanza3">
+                    As the clock resets and the sky ignites,<br>
+                    I have just one wish for us...
+                </div>
             </div>
 
-            <div class="stanza" id="stanza3">
-                As the clock resets and the sky ignites,<br>
-                I have just one wish for us...
+            <div id="post-midnight-group" class="post-midnight">
+                <div class="stanza" id="stanza4">
+                    The sky is awake now,<br>
+                    painted with light and noise.<br>
+                    But down here in the grass,<br>
+                    the world is still ours.
+                </div>
+                
+                <div class="stanza" id="stanza5">
+                    Let this new year bring you<br>
+                    wings to fly and ground to stand on.<br>
+                    Let every day be a discovery.
+                </div>
+
+                <div class="stanza" id="stanza6">
+                    <span style="font-size: 2rem; color: #ffd700; font-weight: bold; text-shadow: 0 0 20px #ffd700;">
+                        HAPPY NEW YEAR!
+                    </span><br>
+                    <span style="font-size: 1rem; color: white;">Here's to 2026.</span>
+                </div>
             </div>
 
-            <div class="final-message" id="midnightMsg">
-                HAPPY NEW YEAR!<br>
-                <span style="font-size: 1rem; color: white; font-weight: normal;">Here's to 2026.</span>
-            </div>
         </div>
 
         <div class="grass-container" id="grass"></div>
@@ -45,7 +63,7 @@
 
     <div class="scroll-hint">Scroll down...</div>
 
-<script>
+    <script>
         // --- 1. SETUP STARS ---
         const starContainer = document.getElementById('stars');
         for(let i=0; i<150; i++) {
@@ -94,9 +112,8 @@
             blade.style.animationDelay = `${delay}s`;
             blade.style.animationDuration = `${duration}s`;
             
-            // PHYSICS PROPERTIES FOR SMOOTHING
-            blade.currentBend = 0; // Where the grass is right now
-            blade.targetBend = 0;  // Where the mouse wants it to be
+            blade.currentBend = 0; 
+            blade.targetBend = 0; 
 
             if(Math.random() > 0.90) {
                 const bug = document.createElement('div');
@@ -215,29 +232,51 @@
 
         initNatureLife(); 
 
-        // --- 4. SCROLL FADE LOGIC ---
+        // --- 4. NEW SCROLL FADE LOGIC (Handles 2 Chapters) ---
         const s1 = document.getElementById('stanza1');
         const s2 = document.getElementById('stanza2');
         const s3 = document.getElementById('stanza3');
+        const s4 = document.getElementById('stanza4');
+        const s5 = document.getElementById('stanza5');
+        const s6 = document.getElementById('stanza6');
 
-        window.addEventListener('scroll', () => {
+        let isPostMidnight = false; // Flag to track chapter
+
+        function updateScroll() {
             const scrollTotal = document.body.scrollHeight - window.innerHeight;
             const scrollPos = window.scrollY;
             const pct = scrollPos / scrollTotal; 
 
-            if (pct < 0.25) {
-                s1.style.opacity = 1; s2.style.opacity = 0; s3.style.opacity = 0;
-            } else if (pct >= 0.25 && pct < 0.6) {
-                s1.style.opacity = 0; s2.style.opacity = 1; s3.style.opacity = 0;
+            if (!isPostMidnight) {
+                // CHAPTER 1: PRE-MIDNIGHT
+                s4.style.opacity = 0; s5.style.opacity = 0; s6.style.opacity = 0; // Ensure hidden
+                
+                if (pct < 0.25) {
+                    s1.style.opacity = 1; s2.style.opacity = 0; s3.style.opacity = 0;
+                } else if (pct >= 0.25 && pct < 0.6) {
+                    s1.style.opacity = 0; s2.style.opacity = 1; s3.style.opacity = 0;
+                } else {
+                    s1.style.opacity = 0; s2.style.opacity = 0; s3.style.opacity = 1;
+                }
             } else {
-                s1.style.opacity = 0; s2.style.opacity = 0; s3.style.opacity = 1;
+                // CHAPTER 2: POST-MIDNIGHT
+                s1.style.opacity = 0; s2.style.opacity = 0; s3.style.opacity = 0; // Ensure hidden
+                
+                if (pct < 0.25) {
+                    s4.style.opacity = 1; s5.style.opacity = 0; s6.style.opacity = 0;
+                } else if (pct >= 0.25 && pct < 0.6) {
+                    s4.style.opacity = 0; s5.style.opacity = 1; s6.style.opacity = 0;
+                } else {
+                    s4.style.opacity = 0; s5.style.opacity = 0; s6.style.opacity = 1;
+                }
             }
-        });
+        }
+
+        window.addEventListener('scroll', updateScroll);
         window.dispatchEvent(new Event('scroll'));
 
-        // --- 5. COUNTDOWN & FIREWORKS ---
+        // --- 5. COUNTDOWN & CELEBRATION TRIGGER ---
         const countdownEl = document.getElementById('countdown');
-        const finalMsg = document.getElementById('midnightMsg');
         const scrollHint = document.querySelector('.scroll-hint');
         
         const targetDate = new Date("January 1, 2026 00:00:00 GMT+0800").getTime();
@@ -263,12 +302,20 @@
         }, 1000);
 
         function startCelebration() {
+            // 1. Hide Countdown
             countdownEl.style.display = 'none';
-            s1.style.display = 'none';
-            s2.style.display = 'none';
-            s3.style.display = 'none';
-            scrollHint.style.display = 'none';
-            finalMsg.style.display = 'block';
+            
+            // 2. Switch Text Sets
+            document.getElementById('pre-midnight-group').style.display = 'none';
+            document.getElementById('post-midnight-group').style.display = 'block';
+            
+            // 3. Update Flag
+            isPostMidnight = true;
+            
+            // 4. Force scroll update to show the first new stanza immediately
+            window.dispatchEvent(new Event('scroll'));
+
+            // 5. Start Fireworks
             fireworksEnabled = true;
         }
 
@@ -348,11 +395,9 @@
             for (let i = 0; i < 90; i++) particles.push(new Particle(x, y, hue));
         }
 
-        // --- 7. MASTER ANIMATION LOOP (Merged Fireworks & Grass Physics) ---
         function loop() {
             requestAnimationFrame(loop);
 
-            // --- A. FIREWORKS LOGIC ---
             ctx.globalCompositeOperation = 'destination-out';
             ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -369,27 +414,20 @@
                 if (particles[i].alpha <= 0) particles.splice(i, 1);
             }
 
-            // --- B. GRASS PHYSICS LOGIC (SMOOTHING) ---
-            // "Lerp" (Linear Interpolation) moves current value to target value slowly
             blades.forEach(blade => {
                 const diff = blade.targetBend - blade.currentBend;
-                
-                // If there is a noticeable difference, update properties
                 if (Math.abs(diff) > 0.1) {
-                    blade.currentBend += diff * 0.1; // 0.1 is the "Speed" (Lower = smoother/slower)
+                    blade.currentBend += diff * 0.1; 
                     blade.style.setProperty('--cursor-bend', `${blade.currentBend}deg`);
                 } else if (Math.abs(blade.currentBend) > 0.1) {
-                    // Snap to 0 if very close to stop calculations
                     blade.currentBend = blade.targetBend;
                     blade.style.setProperty('--cursor-bend', `${blade.currentBend}deg`);
                 }
             });
         }
-        loop(); // Start the master loop
-
+        loop();
 
         // --- 8. MOUSE TRACKING ---
-        // We only set the TARGET here. The Loop handles the movement.
         document.addEventListener('mousemove', (e) => {
             const mouseX = e.clientX;
             const mouseY = e.clientY;
@@ -407,7 +445,7 @@
                 const dist = mouseX - bladeX;
                 
                 if (Math.abs(dist) < 120) {
-                    const force = (1 - Math.abs(dist) / 120) * 35; // Max 35 deg
+                    const force = (1 - Math.abs(dist) / 120) * 35;
                     blade.targetBend = -1 * Math.sign(dist) * force;
                 } else {
                     blade.targetBend = 0;
@@ -415,10 +453,12 @@
             });
         });
 
-        // Safety reset
         document.addEventListener('mouseleave', () => {
             blades.forEach(blade => blade.targetBend = 0);
         });
+
+        // DEBUG: Uncomment to test the 'After Midnight' view immediately
+        // startCelebration();
     </script>
 </body>
 </html>
