@@ -61,20 +61,53 @@
 
         // --- 2. SETUP GRASS & LADYBUGS ---
         const grassContainer = document.getElementById('grass');
-        const numBlades = 80;
+        const numBlades = 100; // Increased count slightly
+
+        // Define color palettes (dark bottom -> lighter top)
+        const grassPalettes = [
+            ['#0f3d0f', '#2d6a2d'], // Standard green
+            ['#0a2b0a', '#1f4f1f'], // Darker green
+            ['#051a05', '#133313']  // Very dark shadow green
+        ];
+
         for(let i=0; i<numBlades; i++) {
             const blade = document.createElement('div');
-            blade.className = 'blade';
+            blade.classList.add('blade');
             
-            const h = 60 + Math.random() * 80; 
+            // 1. Height variation (Much taller now: 100px to 250px)
+            const h = 100 + Math.random() * 150; 
             blade.style.height = h + 'px';
+            
+            // 2. Position & Z-Index
             blade.style.left = Math.random() * 100 + '%';
-            blade.style.animationDelay = Math.random() * 2 + 's';
+            // Taller blades in front, shorter ones behind
             blade.style.zIndex = Math.floor(h); 
 
-            if(Math.random() > 0.85) {
+            // 3. Color Variation
+            // Pick a random palette index (0, 1, or 2)
+            const paletteIndex = Math.floor(Math.random() * grassPalettes.length);
+            const colors = grassPalettes[paletteIndex];
+            blade.style.background = `linear-gradient(to top, ${colors[0]}, ${colors[1]})`;
+
+            // 4. Bending Variation (Injecting CSS Variables)
+            // Base angle: lean left or right between -20deg and +20deg
+            const baseAngle = (Math.random() * 40 - 20).toFixed(1);
+            // Sway range: how much it moves, between 2deg and 8deg
+            const swayRange = (Math.random() * 6 + 2).toFixed(1);
+            // Animation delay/duration for desynchronized movement
+            const delay = (Math.random() * 2).toFixed(1);
+            const duration = (Math.random() * 2 + 2).toFixed(1); // 2s to 4s duration
+
+            blade.style.setProperty('--rotate-base', `${baseAngle}deg`);
+            blade.style.setProperty('--sway-range', `${swayRange}deg`);
+            blade.style.animationDelay = `${delay}s`;
+            blade.style.animationDuration = `${duration}s`;
+
+
+            // Add Ladybug (slightly lower chance now that grass is dense)
+            if(Math.random() > 0.88) {
                 const bug = document.createElement('div');
-                bug.className = 'ladybug';
+                bug.classList.add('ladybug');
                 blade.appendChild(bug);
             }
             grassContainer.appendChild(blade);
