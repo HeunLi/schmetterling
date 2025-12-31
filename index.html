@@ -90,7 +90,7 @@
 
             blade.style.setProperty('--rotate-base', `${baseAngle}deg`);
             blade.style.setProperty('--sway-range', `${swayRange}deg`);
-            blade.style.setProperty('--cursor-bend', '0deg'); // Init
+            blade.style.setProperty('--cursor-bend', '0deg'); 
             blade.style.animationDelay = `${delay}s`;
             blade.style.animationDuration = `${duration}s`;
 
@@ -104,7 +104,7 @@
             blades.push(blade);
         }
 
-        // --- 3. LADYBUG AI (FLIGHT CONTROLLER) ---
+        // --- 3. LADYBUG AI ---
         function initNatureLife() {
             setInterval(() => {
                 const action = Math.random();
@@ -364,37 +364,44 @@
         }
         loop();
 
-        // --- 7. MOUSE INTERACTION (DISPLACE GRASS) ---
-        document.addEventListener('mousemove', (e) => {
-            const mouseX = e.clientX;
-            const mouseY = e.clientY;
-            
-            // Only calculate if mouse is near the bottom (performance optimization)
-            if (mouseY < window.innerHeight - 250) return; 
+        // --- 7. MOUSE INTERACTION (FIXED) ---
+        // Logic: Push grass away from cursor, but reset properly when mouse leaves or goes high.
+        
+        function updateGrassBend(mouseX, mouseY) {
+             // We still check height for *applying* force to make it feel natural (only affects bottom),
+             // BUT we iterate all blades to reset them if the mouse is too high.
+             const isLowEnough = mouseY > window.innerHeight - 300; 
 
             blades.forEach(blade => {
+                // If mouse is too high, force reset immediately
+                if (!isLowEnough) {
+                    blade.style.setProperty('--cursor-bend', '0deg');
+                    return;
+                }
+
                 const rect = blade.getBoundingClientRect();
                 const bladeX = rect.left + rect.width / 2;
-                
-                // Calculate horizontal distance
                 const dist = mouseX - bladeX;
                 
                 // Interaction Radius: 120px
                 if (Math.abs(dist) < 120) {
-                    // Calculate force: closer = stronger push
-                    // Maximum bend: 60 degrees
-                    // Math.sign(dist) determines direction (push left or right)
-                    const force = (1 - Math.abs(dist) / 120) * 60; 
-                    
-                    // If mouse is to the right (dist > 0), push left (negative rotation)
-                    // If mouse is to the left (dist < 0), push right (positive rotation)
+                    // FORCE REDUCED: Was 60, now 30 for a gentler touch
+                    const force = (1 - Math.abs(dist) / 120) * 30; 
                     const bend = -1 * Math.sign(dist) * force;
-                    
                     blade.style.setProperty('--cursor-bend', `${bend}deg`);
                 } else {
                     blade.style.setProperty('--cursor-bend', '0deg');
                 }
             });
+        }
+
+        document.addEventListener('mousemove', (e) => {
+            updateGrassBend(e.clientX, e.clientY);
+        });
+
+        // Safety: If mouse leaves the window, reset everything
+        document.addEventListener('mouseleave', () => {
+            blades.forEach(blade => blade.style.setProperty('--cursor-bend', '0deg'));
         });
     </script>
 </body>
