@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Waiting for 2026</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="stage">
+        <div id="stars"></div>
+        
+        <div id="countdown">00:00:00</div>
+
+        <div class="content-wrapper">
+            <div class="stanza" id="stanza1">
+                In the quiet of the fields,<br>
+                under a blanket of stars,<br>
+                I watched the year grow,<br>
+                much like the grass beneath our feet.
+            </div>
+            
+            <div class="stanza" id="stanza2">
+                They say ladybugs are a sign of luck,<br>
+                a small spark in a wide world.<br>
+                To me, that spark has always been you.
+            </div>
+
+            <div class="stanza" id="stanza3">
+                As the clock resets and the sky ignites,<br>
+                I have just one wish for us...
+            </div>
+
+            <div class="final-message" id="midnightMsg">
+                HAPPY NEW YEAR!<br>
+                <span style="font-size: 1rem; color: white; font-weight: normal;">Here's to 2026.</span>
+            </div>
+        </div>
+
+        <div class="grass-container" id="grass"></div>
+    </div>
+
+    <div class="scroll-hint">Scroll down...</div>
+
+    <script>
+        // --- 1. SETUP STARS ---
+        const starContainer = document.getElementById('stars');
+        for(let i=0; i<150; i++) {
+            const star = document.createElement('div');
+            star.classList.add('star');
+            star.style.left = Math.random() * 100 + '%';
+            star.style.top = Math.random() * 60 + '%'; 
+            star.style.width = Math.random() * 3 + 'px';
+            star.style.height = star.style.width;
+            star.style.animationDuration = (Math.random() * 2 + 1) + 's';
+            starContainer.appendChild(star);
+        }
+
+        // --- 2. SETUP GRASS & LADYBUGS ---
+        const grassContainer = document.getElementById('grass');
+        const numBlades = 80;
+        for(let i=0; i<numBlades; i++) {
+            const blade = document.createElement('div');
+            blade.classList.add('blade');
+            
+            // Randomize grass appearance
+            const h = 60 + Math.random() * 80; 
+            blade.style.height = h + 'px';
+            blade.style.left = Math.random() * 100 + '%';
+            blade.style.animationDelay = Math.random() * 2 + 's';
+            blade.style.zIndex = Math.floor(h); 
+
+            // 1 in 10 blades gets a ladybug
+            if(Math.random() > 0.85) {
+                const bug = document.createElement('div');
+                bug.classList.add('ladybug');
+                blade.appendChild(bug);
+            }
+
+            grassContainer.appendChild(blade);
+        }
+
+        // --- 3. SCROLL FADE LOGIC ---
+        const s1 = document.getElementById('stanza1');
+        const s2 = document.getElementById('stanza2');
+        const s3 = document.getElementById('stanza3');
+
+        window.addEventListener('scroll', () => {
+            const scrollTotal = document.body.scrollHeight - window.innerHeight;
+            const scrollPos = window.scrollY;
+            const pct = scrollPos / scrollTotal; 
+
+            if (pct < 0.25) {
+                s1.style.opacity = 1;
+                s2.style.opacity = 0;
+                s3.style.opacity = 0;
+            } else if (pct >= 0.25 && pct < 0.6) {
+                s1.style.opacity = 0;
+                s2.style.opacity = 1;
+                s3.style.opacity = 0;
+            } else {
+                s1.style.opacity = 0;
+                s2.style.opacity = 0;
+                s3.style.opacity = 1;
+            }
+        });
+        
+        window.dispatchEvent(new Event('scroll'));
+
+        // --- 4. COUNTDOWN & FIREWORKS ---
+        const countdownEl = document.getElementById('countdown');
+        const finalMsg = document.getElementById('midnightMsg');
+        const scrollHint = document.querySelector('.scroll-hint');
+        
+        // SET TARGET: January 1, 2026 00:00:00 (Philippine Time GMT+8)
+        const targetDate = new Date("January 1, 2026 00:00:00 GMT+0800").getTime();
+
+        const timer = setInterval(() => {
+            const now = new Date().getTime();
+            const diff = targetDate - now;
+
+            if (diff <= 0) {
+                clearInterval(timer);
+                launchNewYear();
+            } else {
+                const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+                
+                countdownEl.innerText = 
+                    (hours < 10 ? "0" + hours : hours) + ":" + 
+                    (minutes < 10 ? "0" + minutes : minutes) + ":" + 
+                    (seconds < 10 ? "0" + seconds : seconds);
+            }
+        }, 1000);
+
+        function launchNewYear() {
+            countdownEl.style.display = 'none';
+            s1.style.display = 'none';
+            s2.style.display = 'none';
+            s3.style.display = 'none';
+            scrollHint.style.display = 'none';
+
+            finalMsg.style.display = 'block';
+
+            const duration = 15 * 1000;
+            const end = Date.now() + duration;
+
+            (function frame() {
+                confetti({
+                    particleCount: 5,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 },
+                    colors: ['#ff0000', '#ffa500', '#ffffff'] 
+                });
+                confetti({
+                    particleCount: 5,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 },
+                    colors: ['#00ff00', '#0000ff', '#ffd700'] 
+                });
+
+                if (Date.now() < end) {
+                    requestAnimationFrame(frame);
+                }
+            }());
+        }
+
+        // DEBUG: Uncomment below to test fireworks
+        // launchNewYear();
+    </script>
+</body>
+</html>
