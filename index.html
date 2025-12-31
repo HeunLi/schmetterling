@@ -199,9 +199,15 @@
             constructor() {
                 this.x = random(canvas.width * 0.2, canvas.width * 0.8);
                 this.y = canvas.height;
-                this.targetY = random(canvas.height * 0.1, canvas.height * 0.4);
-                this.speed = random(8, 12);
-                this.angle = -Math.PI / 2 + random(-0.1, 0.1); // Slight tilt
+                
+                // CHANGE 1: Target the very top of the sky (0% to 35%)
+                this.targetY = random(0, canvas.height * 0.35);
+                
+                // CHANGE 2: Increase launch speed so they can actually reach that height
+                // Was (8, 12) -> Now (13, 19)
+                this.speed = random(13, 19); 
+                
+                this.angle = -Math.PI / 2 + random(-0.05, 0.05); // Sharper angle (less tilt)
                 this.vx = Math.cos(this.angle) * this.speed;
                 this.vy = Math.sin(this.angle) * this.speed;
                 
@@ -214,10 +220,11 @@
                 this.x += this.vx;
                 this.y += this.vy;
                 
-                // Gravity on the rocket itself (slows it down as it rises)
-                this.vy += 0.15; 
+                // CHANGE 3: Lower gravity slightly on the rocket so it maintains momentum longer
+                // Was 0.15 -> Now 0.12
+                this.vy += 0.12; 
 
-                // If it starts falling or hits target height, explode
+                // Explode if we hit the target OR if we start falling down (vy >= 0)
                 if (this.vy >= 0 || this.y <= this.targetY) {
                     this.exploded = true;
                     createExplosion(this.x, this.y, this.hue);
@@ -229,7 +236,6 @@
                 ctx.globalCompositeOperation = 'lighter';
                 ctx.fillStyle = `hsl(${this.hue}, 100%, ${this.brightness}%)`;
                 ctx.beginPath();
-                // Draw a small "trail" tail
                 ctx.arc(this.x, this.y, 3, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.restore();
